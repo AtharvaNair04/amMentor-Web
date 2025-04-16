@@ -1,6 +1,9 @@
+'use client';
 
-import Link from 'next/link';
+// components/layout/Navbar.jsx
 import { usePathname } from 'next/navigation';
+import Link from 'next/link';
+import Logo from '../ui/logo';
 
 const Navbar = () => {
   const pathname = usePathname();
@@ -10,15 +13,12 @@ const Navbar = () => {
   };
 
   return (
-    <nav className="flex justify-between items-center w-full px-6 py-4">
+    <nav className="flex justify-between items-center w-full h-16 px-6 bg-dark-bg mx-auto max-w-[1621px]">
+      {/* Logo */}
       <div className="flex items-center">
-        <Link href="/dashboard" className="text-white-text text-xl font-bold">
-          <span>amMENT</span>
-          <span className="text-primary-yellow">&lt;</span>
-          <span className="text-primary-yellow">&gt;</span>
-          <span>R</span>
-        </Link>
+        <Logo />
       </div>
+      
       <div className="flex items-center space-x-8">
         <Link 
           href="/dashboard" 
