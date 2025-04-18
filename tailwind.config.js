@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-require-imports */
 /** @type {import('tailwindcss').Config} */
 module.exports = {
   content: [
@@ -18,9 +19,12 @@ module.exports = {
         'grey': '#777777',
         'muted-grey': '#C7C7C7',
         'deep-grey': '#464646',
+        'deeper-grey':'#2B2B2B',
         'dark-grey': '#303030',
       },
     },
   },
-  plugins: [],
+  plugins: [
+    require('tailwind-scrollbar-hide')
+  ],
 }
