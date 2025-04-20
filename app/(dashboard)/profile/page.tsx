@@ -1,12 +1,61 @@
+'use client'
 
-const profilePage = () => {
+import Link from 'next/link'
+import {FaGithub,FaGitlab,FaTwitter,FaAt,FaArrowRight,FaSignOutAlt,} from 'react-icons/fa'
 
-    return (
-        <div className="text-white">
-            <h1>Dashboard</h1>
-            <p>Welcome to the Profile!</p>
+const ProfilePage = ({userRole = "Mentee"}) => {
+  const isMentor = userRole === "Mentor";
+  return (
+    <div className="bg-[#121212] text-white px-6 py-10 min-h-screen font-sans">
+      <div className="max-w-6xl mx-auto space-y-10">
+        <div className="flex flex-col md:flex-row items-center md:items-start bg-[#2a2a2a] rounded-lg p-8 md:p-10 gap-10 w-full shadow-md">
+          <div className="flex flex-col items-center">
+            <div className="relative">
+              <div className="w-36 h-36 rounded-full border-4 border-yellow-400 flex items-center justify-center text-lg font-semibold text-white">
+                Profile
+              </div>
+            </div>
+            <button className="mt-4 px-4 py-1 border border-gray-400 text-yellow-400 rounded-md text-sm hover:bg-yellow-400 hover:text-black transition">
+              Customise Profile
+            </button>
+          </div>
+          <div className="flex flex-col">
+            <h1 className="text-2xl font-bold">Username</h1>
+            <p className="text-sm text-gray-300">Email address</p>
+            <p className="text-sm text-gray-400">{isMentor ? 'Mentor' : 'Mentee'} @ amFOSS</p>
+            <div className="flex gap-4 mt-4 text-gray-400">
+              <Link href="#"><FaGithub className="text-2xl hover:text-white transition" /></Link>
+              <Link href="#"><FaGitlab className="text-2xl hover:text-white transition" /></Link>
+              <Link href="#"><FaTwitter className="text-2xl hover:text-white transition" /></Link>
+              <Link href="#"><FaAt className="text-2xl hover:text-white transition" /></Link>
+            </div>
+          </div>
+          <div className="ml-auto">
+            <button className="bg-yellow-400 text-black px-4 py-2 rounded-full text-sm font-medium flex items-center gap-1 hover:bg-yellow-500 transition">
+              Logout <FaSignOutAlt size={12} />
+            </button>
+          </div>
         </div>
-    );
-  };
-  
-  export default profilePage;
+        <div className="w-full space-y-4">
+          <div className="flex justify-between items-center">
+            <h2 className="text-lg font-semibold tracking-wide">BADGES EARNED</h2>
+            <Link href="#" className="text-yellow-400 text-sm flex items-center gap-1 hover:underline">
+              See all <FaArrowRight size={12} />
+            </Link>
+          </div>
+
+          <div className="bg-[#2e2e2e] p-6 rounded-lg flex gap-6 overflow-x-auto">
+            {[...Array(6)].map((_, index) => (
+              <div
+                key={index}
+                className="w-28 h-28 bg-[#4B4B4B] rounded-full flex-shrink-0"
+              ></div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+export default ProfilePage
