@@ -25,7 +25,6 @@ const LeaderBoardPage = () => {
             </div>
           </div>
 
-          {/* Leaderboard columns */}
           <div className="flex justify-center items-end mb-12">
             <div className="flex flex-col items-center mx-4 w-36">
               <div className="bg-gray-400 w-full h-40 flex items-center justify-center text-black text-2xl font-bold rounded-t-md">
@@ -44,7 +43,6 @@ const LeaderBoardPage = () => {
             </div>
           </div>
 
-          {/* Leaderboard Table */}
           <div className="mt-8">
             <div className="border-t border-white mb-4"></div>
 

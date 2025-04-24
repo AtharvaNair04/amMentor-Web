@@ -19,7 +19,6 @@ const Navbar = () => {
         <Logo />
       </div>
       
-      {/* Removed the center div and moved links to the right */}
       <div className="flex items-center">
         <div className="flex items-center space-x-8 text-xl mr-4">
           <Link 
