@@ -14,7 +14,7 @@ module.exports = {
         'light-grey-bg': 'rgba(217, 217, 217, 0.02)',
         'white-text': '#FFFFFF',
         'red': '#FF5252',
-        'dark-red': '#B25503',
+        'dark-red': '#B20503',
         'green': '#00FF09',
         'grey': '#777777',
         'muted-grey': '#C7C7C7',
