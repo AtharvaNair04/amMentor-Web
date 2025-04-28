@@ -2,7 +2,7 @@
 
 export default function Home() {
   return (
-    <div className="bg-primary-yellow">
+    <div className="pt-20 bg-primary-yellow min-h-screen">
       Hello
     </div>
   );
