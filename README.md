@@ -36,7 +36,8 @@ The application provides distinct interfaces for two primary user roles:
 - **Mentees**: Learners who complete tasks across various tracks to gain points and recognition
 
 
-
+## Technical Foundation
+amMentor-Web is built on a modern web technology stack, utilizing Next.js 15.3.0 as its framework foundation with React 19.0.0 for component-based UI development. The application is implemented in TypeScript for type safety and uses Tailwind CSS for styling.
 ## Key Features
 
 | Feature               | Description                                                                 |
@@ -51,6 +52,8 @@ The application provides distinct interfaces for two primary user roles:
 ## User Flow
 The application implements a role-based user flow, starting from common authentication and diverging into role-specific experiences:
 
+## Application Structure
+The application follows a structured routing pattern centered around two main sections:
 
 ## Development and Extension
 
