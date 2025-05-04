@@ -2,7 +2,7 @@
   <img src="public/image.png" width="400" alt="amMentor Logo" />
 </p>
 <p align="center">
-  A gamified mentorship platform built with Flutter.
+  A gamified mentorship platform built with NextJs
 </p>
 
 <p align="center">
@@ -28,16 +28,21 @@
 
 
 ## Overview
-amMentor is a cross-platform application built for both [mobile](https://github.com/ganidande905/amMentor) and web, designed to transform traditional mentorship into an engaging, gamified experience. Built using Flutter, it empowers mentees to progress through curated learning tracks under the guidance of experienced mentors. The system emphasizes accountability, growth, and engagement with features like leaderboards, task management, and achievement recognition.
+amMentorbeing developed separately for web and [mobile](https://github.com/ganidande905/amMentor) using dedicated tech stacks for each, designed to transform traditional mentorship into an engaging, gamified experience. Web version built using NextJs, it empowers mentees to progress through curated learning tracks under the guidance of experienced mentors. The system emphasizes accountability, growth, and engagement with features like leaderboards, task management, and achievement recognition.
 
 The application provides distinct interfaces for two primary user roles:
 
 - **Mentors**: Experienced guides who review tasks and support mentees
 - **Mentees**: Learners who complete tasks across various tracks to gain points and recognition
+  
+<img width="1351" alt="Screenshot 2025-05-04 at 2 22 35 PM" src="https://github.com/user-attachments/assets/987245cc-3ac9-40c8-947c-af0331914bfa" />
 
 
 ## Technical Foundation
 amMentor-Web is built on a modern web technology stack, utilizing Next.js 15.3.0 as its framework foundation with React 19.0.0 for component-based UI development. The application is implemented in TypeScript for type safety and uses Tailwind CSS for styling.
+
+<img width="1359" alt="Screenshot 2025-05-04 at 2 28 17 PM" src="https://github.com/user-attachments/assets/4fede214-8a49-4160-9c03-28e98f6b7ef5" />
+
 ## Key Features
 
 | Feature               | Description                                                                 |
@@ -52,8 +57,14 @@ amMentor-Web is built on a modern web technology stack, utilizing Next.js 15.3.0
 ## User Flow
 The application implements a role-based user flow, starting from common authentication and diverging into role-specific experiences:
 
+<img width="1304" alt="Screenshot 2025-05-04 at 2 29 13 PM" src="https://github.com/user-attachments/assets/8d9b3b29-8f4f-497e-a496-20098de88d71" />
+
+
 ## Application Structure
 The application follows a structured routing pattern centered around two main sections:
+
+<img width="1352" alt="Screenshot 2025-05-04 at 2 30 14 PM" src="https://github.com/user-attachments/assets/74ac97d7-aaa1-47f8-914f-83a2a6cfb2d3" />
+
 
 ## Development and Extension
 
@@ -79,7 +90,7 @@ All platforms share the same backend for authentication, track management, leade
 
    ```bash
    git clone https://github.com/your-username/amMentor-Web.git
-   cd amMentor
+   cd amMentor-Web
    ```
 3. **Install** dependencies:
 
