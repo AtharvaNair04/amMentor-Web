@@ -35,7 +35,7 @@ const TasksViewer = ({ isMentor,tasks, highted_task, mentees = [] }: { isMentor:
                                     className={`text-xs sm:text-sm md:text-lg lg:text-2xl 
                                         ${item.includes("Reviewed") && "text-green"} 
                                         ${item.includes("Submitted") && "text-primary-yellow"} 
-                                        ${item.includes("Pending") && "text-primary-yellow"}`} 
+                                        ${item.includes("Pending") && "text-primary-yellow"}`}
                                     key={j}
                                 >
                                     {item}
