@@ -1,29 +1,48 @@
+'use client';
+
 import Link from "next/link";
+import { useAuth } from "@/app/context/authcontext";
 import { CurrentTask, ReviewedTask, FeedbackProvided, UpcomingTask, 
     PlayerStats, PlayerProgress, Badges } from '@/app/(dashboard)/dashboard/dashborditems';
+import { useRouter } from 'next/navigation';
+import { useEffect, useState } from 'react';
+
 const DashboardPage = () => {
+    const { userRole, isLoggedIn } = useAuth();
+    const router = useRouter();
+    const [selectedMentee, setSelectedMentee] = useState("Mentee 1");
+    
+    useEffect(() => {
+        if (!isLoggedIn) {
+            router.push('/');
+        }
+    }, [isLoggedIn, router]);
 
-    //Toggle mentor mentee----------
-    const ismentor = false;
-    //--------------------------
-
-    // Generate mentee options
     const mentees = [];
     for(let i=0; i<5; i++){
         mentees.push(<option key={i}>Mentee {i+1}</option>);
     }
-    //--------------------
+    
+    const ismentor = userRole === 'Mentor';
+    
+    if (!isLoggedIn) {
+        return null; 
+    }
+
     if(ismentor){
         return (
             <div className="text-white p-4 md:p-2 lg:p-0">
-                {/* Top Welcome */}
                 <div className="h-full w-full m-auto scrollbar-hide max-w-[80rem]">
                     <div className="flex flex-col sm:flex-row justify-between">
                         <div className="flex text-xl sm:text-2xl md:text-3xl gap-1 mb-4 sm:mb-0">
                             <h1>Welcome, </h1>
                             <h1 className="text-primary-yellow">Mentor</h1>
                         </div>
-                        <select className="bg-deeper-grey rounded-lg text-primary-yellow px-3 py-2 sm:px-4 md:px-6 md:py-3 w-full sm:w-auto mb-6 sm:mb-0">
+                        <select 
+                            className="bg-deeper-grey rounded-lg text-primary-yellow px-3 py-2 sm:px-4 md:px-6 md:py-3 w-full sm:w-auto mb-6 sm:mb-0"
+                            value={selectedMentee}
+                            onChange={(e) => setSelectedMentee(e.target.value)}
+                        >
                             {mentees}
                         </select>
                     </div>
@@ -55,7 +74,6 @@ const DashboardPage = () => {
     else {
         return (
             <div className="text-white p-4 md:p-2 lg:p-0">
-                {/* Top Welcome */}
                 <div className="h-full w-full m-auto py-4 md:py-7 scrollbar-hide max-w-[80rem]">
                     <div className="flex flex-col sm:flex-row justify-between">
                         <div className="flex text-xl sm:text-2xl md:text-3xl gap-1 mb-4 sm:mb-0">

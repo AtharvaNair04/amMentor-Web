@@ -13,7 +13,6 @@ const TasksViewer = ({ isMentor,tasks, highted_task, mentees = [] }: { isMentor:
             setExpandedTaskIndex(expandedTaskIndex === index ? null : index);
         }
         else{
-            //Might wanna change
             router.push('/submit')
         }
     };

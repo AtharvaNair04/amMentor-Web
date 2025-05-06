@@ -20,7 +20,6 @@ function CurrentTask({mentor=false}:{mentor?:boolean}){
 }
 
 function ReviewedTask(){
-    //to be replaced
     const tasks = [];
     for(let i=0;i<20;i++){
         tasks.push(
@@ -34,7 +33,6 @@ function ReviewedTask(){
         </div>
         )
     }
-    //----------------------
     return(
     <div className="bg-deeper-grey rounded-xl md:rounded-3xl p-2 sm:p-3 pb-4 sm:pb-5 w-full">
         <h1 className="text-white font-bold text-base sm:text-lg md:text-xl px-2 sm:px-4 md:px-16 p-1 sm:p-2 md:p-4">REVIEWED TASKS</h1>
@@ -46,7 +44,6 @@ function ReviewedTask(){
 }
 
 function FeedbackProvided(){
-    //to be replaced
     const tasks = [];
     for(let i=0;i<20;i++){
         tasks.push(
@@ -60,7 +57,6 @@ function FeedbackProvided(){
         </div>
         )
     }
-    //----------------------
     return(
     <div className="bg-deeper-grey rounded-xl md:rounded-3xl p-2 sm:p-3 pb-4 sm:pb-5 mt-2">
         <h1 className="text-white font-bold text-base sm:text-lg md:text-xl px-2 sm:px-4 md:px-16 p-1 sm:p-2 md:p-4">FEEDBACK PROVIDED</h1>
@@ -72,7 +68,6 @@ function FeedbackProvided(){
 }
 
 function UpcomingTask(){
-    //to be replaced
     const tasks = [];
     for(let i=0;i<20;i++){
         tasks.push(
@@ -86,7 +81,6 @@ function UpcomingTask(){
         </div>
         )
     }
-    //----------------------
     return(
     <div className="bg-deeper-grey rounded-xl md:rounded-3xl p-2 sm:p-3 pb-4 sm:pb-5 w-full">
         <h1 className="text-white font-bold text-base sm:text-lg md:text-xl px-2 sm:px-4 md:px-16 p-1 sm:p-2 md:p-4">UPCOMING TASKS</h1>
@@ -98,7 +92,6 @@ function UpcomingTask(){
 }
 
 function PlayerStats(){
-    // To be replaced
     const rank = 13;
     const points = 3000;
     return(
@@ -116,7 +109,6 @@ function PlayerStats(){
 }
 
 function PlayerProgress() {
-    // To be replaced
     const points = 3000;
     const totalpoints = 5000;
     const progressPercentage = (points / totalpoints) * 100;

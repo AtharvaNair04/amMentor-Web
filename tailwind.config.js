@@ -21,6 +21,7 @@ module.exports = {
         'deep-grey': '#464646',
         'deeper-grey':'#2B2B2B',
         'dark-grey': '#303030',
+        'container-grey': 'rgba(217, 217, 217, 0.05)', 
       },
     },
   },

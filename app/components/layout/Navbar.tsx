@@ -19,7 +19,6 @@ const Navbar = () => {
     
     window.addEventListener('resize', checkIfMobile);
     
-    // Clean up
     return () => window.removeEventListener('resize', checkIfMobile);
   }, []);
   

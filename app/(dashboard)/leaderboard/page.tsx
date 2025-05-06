@@ -1,4 +1,9 @@
+'use client';
+
 import { LeaderboardEntry } from "./leaderboarditems";
+import { useAuth } from "@/app/context/authcontext";
+import { useRouter } from 'next/navigation';
+import { useEffect } from 'react';
 
 const leaderboardData: LeaderboardEntry[] = [
   { position: 1, name: "User 1", points: "xxx" },
@@ -9,10 +14,23 @@ const leaderboardData: LeaderboardEntry[] = [
 ];
 
 const LeaderBoardPage = () => {
+  const { isLoggedIn } = useAuth();
+  const router = useRouter();
+  
+  useEffect(() => {
+    if (!isLoggedIn) {
+      router.push('/');
+    }
+  }, [isLoggedIn, router]);
+
+  if (!isLoggedIn) {
+    return null; 
+  }
+
   return (
     <div className="max-h-screen">
       <div className="rounded-lg max-w-[90rem] mx-auto">
-        <div className="bg-dark-grey bg-opacity-50 rounded-3xl p-6 min-h-[800px] w-full">
+        <div className="bg-container-grey bg-opacity-50 rounded-3xl p-6 min-h-[800px] w-full">
           <div className="mb-6 px-10 py-4">
             <div className="flex justify-between items-center">
               <div className="flex-1 max-w-[70%]">

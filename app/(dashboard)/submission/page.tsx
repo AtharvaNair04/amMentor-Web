@@ -1,10 +1,22 @@
-'use client'
-import { useState } from "react";
+'use client';
+
+import { useState, useEffect } from "react";
 import TasksViewer from "./submissionitems";
+import { useAuth } from "@/app/context/authcontext";
+import { useRouter } from 'next/navigation';
 
 const TasksPage = () => {
-    const ismentor = true;
+    const { userRole, isLoggedIn } = useAuth();
+    const router = useRouter();
     const [toggles, setToggles] = useState([true, false, false]);
+    
+    useEffect(() => {
+        if (!isLoggedIn) {
+            router.push('/');
+        }
+    }, [isLoggedIn, router]);
+
+    const ismentor = userRole === 'Mentor';
 
     const AllTasksMentee: string[][] = [
         ["00", "Figma Design Task", "Reviewed"],
@@ -51,6 +63,10 @@ const TasksPage = () => {
 
     const [toggledTasks, setToggledTasks] = useState<string[][]>(getTasksByToggle(0));
 
+    useEffect(() => {
+        setToggledTasks(getTasksByToggle(toggles.findIndex(toggle => toggle === true) || 0));
+    }, [userRole]);
+
     const getFilteredMentees = (): string[][][] => {
         if (!ismentor) return [];
         return toggledTasks.map(task => {
@@ -65,6 +81,10 @@ const TasksPage = () => {
         newToggles[index] = true;
         setToggles(newToggles);
         setToggledTasks(getTasksByToggle(index));
+    }
+
+    if (!isLoggedIn) {
+        return null; 
     }
 
     return (
@@ -100,6 +120,5 @@ const TasksPage = () => {
         </div>
     );
 };
-
 
 export default TasksPage;
