@@ -81,7 +81,7 @@ const TasksPage = () => {
                     onClick={() => toggleState(1)}
                 >
                     {ismentor ? "Reviewed Tasks" : "Submitted"}
-                </button>ull
+                </button>
                 <button 
                     className={`rounded-full w-1/3 py-2 text-sm sm:text-lg md:text-xl lg:text-2xl transition-colors ${toggles[2] ? "bg-primary-yellow text-black" : "bg-deeper-grey"}`} 
                     onClick={() => toggleState(2)}
