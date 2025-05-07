@@ -3,7 +3,7 @@ import { useState } from "react";
 import TasksViewer from "./submissionitems";
 
 const TasksPage = () => {
-    const ismentor = true;
+    const ismentor = false;
     const [toggles, setToggles] = useState([true, false, false]);
 
     const AllTasksMentee: string[][] = [
@@ -69,7 +69,7 @@ const TasksPage = () => {
 
     return (
         <div className="text-white">
-            <div className="bg-deeper-grey rounded-full w-[90%] sm:w-[70%] md:w-[50%] flex justify-between m-auto mt-5">
+            <div className="bg-deeper-grey scrollbar-hide rounded-full w-[90%] sm:w-[70%] md:w-[50%] flex justify-between m-auto mt-5">
                 <button 
                     className={`rounded-full w-1/3 py-2 text-sm sm:text-lg md:text-xl lg:text-2xl transition-colors ${toggles[0] ? "bg-primary-yellow text-black" : "bg-deeper-grey"}`} 
                     onClick={() => toggleState(0)}
@@ -89,7 +89,7 @@ const TasksPage = () => {
                     {ismentor ? "Pending Tasks" : "Reviewed"}
                 </button>
             </div>
-            <div className="w-[95%] sm:w-[85%] md:w-[80%] mt-7 m-auto">
+            <div className="w-[95%] sm:w-[85%] md:w-[80%] mt-7 h-[80vh] overflow-scroll scrollbar-hide px-5 m-auto">
                 <TasksViewer 
                     isMentor={ismentor}
                     highted_task={CurrentTaskIndex} 
