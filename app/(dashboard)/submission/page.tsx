@@ -142,7 +142,7 @@ const TasksPage = () => {
                             {ismentor ? "Pending Tasks" : "Reviewed"}
                         </button>
                     </div>
-                    <div className="w-[95%] sm:w-[85%] md:w-[80%] mt-7 m-auto">
+                    <div className="w-[95%] sm:w-[85%] md:w-[80%] mt-7 h-[80vh] overflow-scroll scrollbar-hide px-5 m-auto">
                         <TasksViewer 
                             isMentor={ismentor}
                             highted_task={CurrentTaskIndex} 
