@@ -1,10 +1,20 @@
 'use client'
 
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import {FaGithub,FaGitlab,FaTwitter,FaAt,FaArrowRight,FaSignOutAlt,} from 'react-icons/fa'
+import { useAuth } from '@/app/context/authcontext'
 
-const ProfilePage = ({userRole = "Mentee"}) => {
+const ProfilePage = () => {
+  const { userRole, logout } = useAuth();
+  const router = useRouter();
   const isMentor = userRole === "Mentor";
+
+  const handleLogout = () => {
+    logout();
+    router.push('/login'); 
+  };
+
   return (
     <div className="bg-[#1E1E1E] text-white px-6 py-10 min-h-screen font-sans">
       <div className="max-w-6xl mx-auto space-y-10">
@@ -31,7 +41,10 @@ const ProfilePage = ({userRole = "Mentee"}) => {
             </div>
           </div>
           <div className="ml-auto">
-            <button className="bg-yellow-400 text-black px-4 py-2 rounded-full text-sm font-medium flex items-center gap-1 hover:bg-yellow-500 transition">
+            <button 
+              onClick={handleLogout}
+              className="bg-yellow-400 text-black px-4 py-2 rounded-full text-sm font-medium flex items-center gap-1 hover:bg-yellow-500 transition"
+            >
               Logout <FaSignOutAlt size={12} />
             </button>
           </div>

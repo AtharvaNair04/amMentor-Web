@@ -1,13 +1,25 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { useAuth } from '@/app/context/authcontext';
 
 export default function LoginPage() {
-  const [role, setRole] = useState('Mentee');
+  type UserRole = 'Mentee' | 'Mentor';
+  const [role, setRole] = useState<UserRole>('Mentee');
   const [open, setOpen] = useState(false);
   const [email, setEmail] = useState('');
   const [otp, setOtp] = useState('');
   const [otpSent, setOtpSent] = useState(false);
+  
+  const router = useRouter();
+  const { login, isLoggedIn } = useAuth();
+
+  useEffect(() => {
+    if (isLoggedIn) {
+      router.push('/dashboard');
+    }
+  }, [isLoggedIn, router]);
 
   const handleGenerateOtp = () => {
     if (email && email.includes('@') && email.includes('.')) {
@@ -19,72 +31,73 @@ export default function LoginPage() {
   };
 
   const handleLogin = () => {
-    console.log('Login attempted with:', { role, email, otp });
+    login(role);
+    router.push('/dashboard');
   };
 
   return (
     <div className="py-6 w-full max-w-lg relative z-10">
       <div className="space-y-6">
         <div className="relative w-full">
-        <button
-    onClick={() => setOpen(!open)}
-    className="bg-yellow-400 text-black font-medium w-full py-2 px-4 rounded-2xl flex justify-between items-center focus:outline-none transition-all"
-  >
-    <div className="flex items-center">
-      <svg
-        xmlns="http://www.w3.org/2000/svg"
-        className="h-5 w-5 text-black mr-2" 
-        fill="none" 
-        viewBox="0 0 24 24" 
-        stroke="currentColor"
-      >
-        <path 
-          strokeLinecap="round" 
-          strokeLinejoin="round" 
-          strokeWidth="2" 
-          d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
-        />
-      </svg>
-      <span>{role}</span>
-    </div>
+          <button
+            onClick={() => setOpen(!open)}
+            className="bg-yellow-400 text-black font-medium w-full py-2 px-4 rounded-2xl flex justify-between items-center focus:outline-none transition-all"
+          >
+            <div className="flex items-center">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-5 w-5 text-black mr-2" 
+                fill="none" 
+                viewBox="0 0 24 24" 
+                stroke="currentColor"
+              >
+                <path 
+                  strokeLinecap="round" 
+                  strokeLinejoin="round" 
+                  strokeWidth="2" 
+                  d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                />
+              </svg>
+              <span>{role}</span>
+            </div>
 
-    <svg
-      className="h-5 w-5 ml-2"
-      xmlns="http://www.w3.org/2000/svg"
-      fill="none"
-      viewBox="0 0 24 24"
-      stroke="currentColor"
-    >
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        strokeWidth="2"
-        d="M19 9l-7 7-7-7"
-      />
-    </svg>
-  </button>
-            {open && (
-              <div className="absolute mt-2 w-full rounded-lg bg-[#1E1E1E] shadow-lg z-10">
-                <div
+            <svg
+              className="h-5 w-5 ml-2"
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="2"
+                d="M19 9l-7 7-7-7"
+              />
+            </svg>
+          </button>
+          {open && (
+            <div className="absolute mt-2 w-full rounded-lg bg-[#1E1E1E] shadow-lg z-10">
+              <div
                 onClick={() => {
-                setRole('Mentee');
-                setOpen(false);
-              }}
-              className="px-4 py-2 hover:bg-yellow-500 cursor-pointer rounded-t-lg"
+                  setRole('Mentee');
+                  setOpen(false);
+                }}
+                className="px-4 py-2 hover:bg-yellow-500 cursor-pointer rounded-t-lg"
               >
                 Mentee
-                </div>
-                <div
+              </div>
+              <div
                 onClick={() => {
-                setRole('Mentor');
-                setOpen(false);
+                  setRole('Mentor');
+                  setOpen(false);
                 }}
                 className="px-4 py-2 hover:bg-yellow-500 cursor-pointer rounded-b-lg"
-                >
-                  Mentor
-                </div>
+              >
+                Mentor
               </div>
-            )}
+            </div>
+          )}
         </div>
 
         <div className="flex items-center bg-[#444444] rounded-2xl px-4 py-2 relative w-full border border-white/40">
