@@ -24,10 +24,10 @@ const TasksViewer = ({ isMentor,tasks, highted_task, mentees = [] }: { isMentor:
                 {tasks.map((task, i) => (
                     <div 
                         key={i}
-                        className={`bg-deeper-grey rounded-xl transition-transform hover:scale-[103%] font-bold ${highted_task == i && "bg-primary-yellow"}`}
+                        className={`bg-deeper-grey rounded-xl transition-transform hover:scale-[103%] font-bold ${highted_task == i && !isMentor && "bg-primary-yellow"}`}
                     >
                         <div 
-                            className={`flex flex-wrap justify-evenly p-3 sm:p-4 ${highted_task == i && "text-black"} text-sm sm:text-base`}
+                            className={`flex flex-wrap justify-evenly p-3 sm:p-4 ${highted_task == i && !isMentor && "text-black"} text-sm sm:text-base`}
                             onClick={() => toggleExpand(i)}
                         >
                             {task.map((item, j) => (
