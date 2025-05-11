@@ -4,11 +4,13 @@ import { useState, useEffect } from 'react';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 import Logo from '../ui/logo';
+import { useAuth } from '@/app/context/authcontext';
 
 const Navbar = () => {
   const pathname = usePathname();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
+  const { userRole } = useAuth();
   
   useEffect(() => {
     const checkIfMobile = () => {
@@ -62,7 +64,7 @@ const Navbar = () => {
                 href="/submission" 
                 className={`${isActive('/submission') ? 'text-primary-yellow' : 'text-white-text'} hover:text-primary-yellow transition-colors`}
               >
-                Submission
+                {userRole === 'Mentor' ? 'Review' : 'Submission'}
               </Link>
               <Link 
                 href="/leaderboard" 
@@ -122,7 +124,7 @@ const Navbar = () => {
                 className={`${isActive('/submission') ? 'text-primary-yellow' : 'text-white-text'} text-xl hover:text-primary-yellow transition-colors`}
                 onClick={toggleMenu}
               >
-                Submission
+                {userRole === 'Mentor' ? 'Review' : 'Submission'}
               </Link>
               <Link 
                 href="/leaderboard" 
