@@ -41,11 +41,11 @@ const TasksPage = () => {
     ];
 
     const AllMentees: string[][][] = [
-        [["Person1", "Reviewed"], ["Person2", "Reviewed"], ["Person3", "Reviewed"], ["Person4", "Reviewed"]],
-        [["Person1", "Submitted"], ["Person2", "Submitted"],["Person3", "Reviewed"], ["Person4", "Reviewed"]],
-        [["Person1", "Submitted"], ["Person2", "Submitted"],["Person3", "Submitted"], ["Person4", "Reviewed"]],
-        [["Person1", "Reviewed"], ["Person2", "Submitted"], ["Person3", "Not Submitted"] ,["Person4", "Not Submitted"]],
-        [["Person1", "Not Submitted"], ["Person2", "Not Submitted"], ["Person3", "Not Submitted"], ["Person4", "Not Submitted"]]
+        [["Person1", "5 days", "3 files", "Reviewed"], ["Person2", "7 days", "2 files", "Reviewed"], ["Person3", "4 days", "1 file", "Reviewed"], ["Person4", "6 days", "5 files", "Reviewed"]],
+        [["Person1", "3 days", "2 files", "Submitted"], ["Person2", "8 days", "4 files", "Submitted"], ["Person3", "2 days", "3 files", "Reviewed"], ["Person4", "9 days", "1 file", "Reviewed"]],
+        [["Person1", "6 days", "5 files", "Submitted"], ["Person2", "4 days", "3 files", "Submitted"], ["Person3", "7 days", "2 files", "Submitted"], ["Person4", "5 days", "4 files", "Reviewed"]],
+        [["Person1", "2 days", "1 file", "Reviewed"], ["Person2", "9 days", "5 files", "Submitted"], ["Person3", "8 days", "4 files", "Not Submitted"], ["Person4", "3 days", "2 files", "Not Submitted"]],
+        [["Person1", "7 days", "3 files", "Not Submitted"], ["Person2", "5 days", "2 files", "Not Submitted"], ["Person3", "6 days", "1 file", "Not Submitted"], ["Person4", "4 days", "4 files", "Not Submitted"]]
     ];
 
     const CurrentTaskIndex: number = 3;

@@ -3,7 +3,7 @@
 import { LeaderboardEntry } from "./leaderboarditems";
 import { useAuth } from "@/app/context/authcontext";
 import { useRouter } from 'next/navigation';
-import { useEffect } from 'react';
+import { JSX, useEffect } from 'react';
 
 const leaderboardData: LeaderboardEntry[] = [
   { position: 1, name: "User 1", points: "xxx" },
@@ -17,6 +17,17 @@ const LeaderBoardPage = () => {
   const { isLoggedIn } = useAuth();
   const router = useRouter();
   
+  const tracks = ["Ai","Web","Mobile","Systems","Vidyaratna"];
+  const options: JSX.Element[] = [];
+  const selectedtrack = "Vidyaratna"
+  tracks.map((val)=>{
+    if(val === selectedtrack){
+      options.push(<option key={val} className="bg-deep-grey  text-white" selected>{val}</option>);
+      return;
+    }
+    options.push(<option key={val} className="bg-deep-grey text-white">{val}</option>);
+  });
+
   useEffect(() => {
     if (!isLoggedIn) {
       router.push('/');
@@ -26,7 +37,6 @@ const LeaderBoardPage = () => {
   if (!isLoggedIn) {
     return null; 
   }
-
   return (
     <div className="max-h-screen">
       <div className="rounded-lg max-w-[90rem] mx-auto">
@@ -37,12 +47,11 @@ const LeaderBoardPage = () => {
                 <h2 className="text-2xl font-bold text-white-text">Task Leaderboard</h2>
                 <div className="border-t border-white mb-4"></div>
               </div>
-                <button className="bg-primary-yellow text-dark-bg px-6 py-2 rounded-full text-md font-bold shadow-lg hover:shadow-xl transition-shadow">
-                  Filter
-                </button>
+                <select className="bg-primary-yellow p-2 px-7  rounded-xl active:rounded-b-none">
+                  {options}
+                </select>
             </div>
           </div>
-
           <div className="flex justify-center items-end mb-12">
             <div className="flex flex-col items-center mx-4 w-36">
               <div className="bg-gray-400 w-full h-40 flex items-center justify-center text-black text-2xl font-bold rounded-t-md">
