@@ -17,7 +17,7 @@ export default function LoginPage() {
 
   useEffect(() => {
     if (isLoggedIn) {
-      router.push('/dashboard');
+      router.push('/track');
     }
   }, [isLoggedIn, router]);
 
