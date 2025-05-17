@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { Brain, Code, Smartphone, Monitor, Award } from 'lucide-react';
 
 export default function TrackSelectionPage() {
@@ -14,8 +15,11 @@ export default function TrackSelectionPage() {
     { id: 'vidyaratna', name: 'Vidyaratna', icon: Award },
   ];
 
+  const router = useRouter();
+
   const handleTrackSelect = (trackId: string) => {
     setSelectedTrack(trackId);
+    router.push(`/dashboard?track=${trackId}`);
   };
 
   return (
