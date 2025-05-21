@@ -8,7 +8,7 @@ import { Brain, Code, Smartphone, Monitor, Award } from 'lucide-react';
 
 
 export default function TrackSelectionPage() {
-  const [selectedTrack, setSelectedTrack] = useState<string>('');
+  const [selectedTrack, setSelectedTrack] = useState<number>(-1);
 
   const [tracks, updatetracks] = useState<{ id: number; name: string; icon: React.ElementType }[]>([]);
 
@@ -30,7 +30,7 @@ export default function TrackSelectionPage() {
   fetchdata();
   const router = useRouter();
 
-  const handleTrackSelect = (trackId: string) => {
+  const handleTrackSelect = (trackId: number) => {
     setSelectedTrack(trackId);
     router.push(`/dashboard?track=${trackId}`);
   };
