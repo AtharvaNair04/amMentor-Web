@@ -13,6 +13,10 @@ const leaderboardData: LeaderboardEntry[] = [
   { position: 5, name: "User 5", points: "xxx" },
 ];
 
+
+
+
+
 const LeaderBoardPage = () => {
   const { isLoggedIn } = useAuth();
   const router = useRouter();
