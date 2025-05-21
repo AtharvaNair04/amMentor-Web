@@ -10,6 +10,27 @@ interface LeaderboardProps {
   title: string;
   entries: LeaderboardEntry[];
 }
+  export async function fetchPlayerdata(trackid: number) {
+    const data = await fetch("https://ammentor.up.railway.app/leaderboard/" + trackid);
+    const response = await data.json();
+    const players: LeaderboardEntry[] = response["leaderboard"].map((element: { name: string; total_points: number }, index: number) => ({
+      position: index + 1,
+      name: element.name,
+      points: element.total_points,
+    }));
+    return players;
+  }
+
+  export async function fetchtrack() {
+    const data = await fetch("https://ammentor.up.railway.app/tracks/");    
+    const response: { id: number; title: string }[] = await data.json();
+    const tracks: { id: number; name: string }[] = response.map((element) => ({
+      id: element.id,
+      name: element.title,
+    }));
+    return tracks;
+  }
+
 
 const LeaderboardItem = ({ position, name, points }: LeaderboardEntry) => {
   return (

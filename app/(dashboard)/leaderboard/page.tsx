@@ -1,38 +1,54 @@
 'use client';
 
-import { LeaderboardEntry } from "./leaderboarditems";
+import { LeaderboardEntry ,fetchPlayerdata, fetchtrack} from './leaderboarditems';
 import { useAuth } from "@/app/context/authcontext";
 import { useRouter } from 'next/navigation';
-import { JSX, useEffect } from 'react';
+import { JSX, useEffect, useState } from 'react';
 
-const leaderboardData: LeaderboardEntry[] = [
-  { position: 1, name: "User 1", points: "xxx" },
-  { position: 2, name: "User 2", points: "xxx" },
-  { position: 3, name: "User 3", points: "xxx" },
-  { position: 4, name: "User 4", points: "xxx" },
-  { position: 5, name: "User 5", points: "xxx" },
-];
+
 
 const LeaderBoardPage = () => {
+
+  const [trackid,changetrack] = useState(1);
+  const [leaderboardData,updateleaderboard] = useState<LeaderboardEntry[]>([]);
+
+
   const { isLoggedIn } = useAuth();
   const router = useRouter();
-  
-  const tracks = ["Ai","Web","Mobile","Systems","Vidyaratna"];
+  const [tracks,set_tracks] = useState<{id:number, name:string}[]>([]);
   const options: JSX.Element[] = [];
   const selectedtrack = "Vidyaratna"
-  tracks.map((val)=>{
-    if(val === selectedtrack){
-      options.push(<option key={val} className="bg-deep-grey  text-white" selected>{val}</option>);
+
+  tracks.map((element)=>{
+    if(element.name === selectedtrack){
+      options.push(<option key={element.id} value={element.id}  className="bg-deep-grey  text-white">{element.name}</option>);
       return;
     }
-    options.push(<option key={val} className="bg-deep-grey text-white">{val}</option>);
+    options.push(<option key={element.id} value={element.id}  className="bg-deep-grey text-white">{element.name}</option>);
   });
+
 
   useEffect(() => {
     if (!isLoggedIn) {
       router.push('/');
     }
-  }, [isLoggedIn, router]);
+    console.log(trackid);
+    async function fetchAndUpdateLeaderboard() {
+      const data = await fetchPlayerdata(trackid);
+      updateleaderboard(data);
+    }
+    fetchAndUpdateLeaderboard();
+    
+  }, [isLoggedIn, router,trackid]);
+
+
+  useEffect(()=>{
+    async function fetchAndUpdateLeaderboard() {
+      const data = await fetchtrack();
+      set_tracks(data)
+    }
+    fetchAndUpdateLeaderboard();
+  },[])
 
   if (!isLoggedIn) {
     return null; 
@@ -47,7 +63,7 @@ const LeaderBoardPage = () => {
                 <h2 className="text-2xl font-bold text-white-text">Task Leaderboard</h2>
                 <div className="border-t border-white mb-4"></div>
               </div>
-                <select className="bg-primary-yellow p-2 px-7  rounded-xl active:rounded-b-none">
+                <select defaultValue={1} onChange={(event)=>{changetrack(parseInt(event.target.value))}} className="bg-primary-yellow p-2 px-7  rounded-xl active:rounded-b-none">
                   {options}
                 </select>
             </div>
