@@ -15,6 +15,8 @@ export default function LoginPage() {
   const router = useRouter();
   const { login, isLoggedIn } = useAuth();
 
+  const API_URL = 'https://ammentor.up.railway.app/';
+
   useEffect(() => {
     if (isLoggedIn) {
       router.push('/track');
@@ -30,10 +32,26 @@ export default function LoginPage() {
     }
   };
 
-  const handleLogin = () => {
+  const handleLogin = async () => {
+  try {
+    const res = await fetch(`${API_URL}auth/user/${email}`);
+    if (!res.ok) {
+      alert("User not found. Please register first.");
+      return;
+    }
+    const user = await res.json();
+    if (user.role !== role) {
+      alert(`Registered as ${user.role}, not ${role}`);
+      return;
+    }
     login(role);
-    router.push('/dashboard');
-  };
+    router.push('/track');
+  } catch (error) {
+    console.error("Login failed", error);
+    alert("Something went wrong during login.");
+  }
+};
+
 
   return (
     <div className="py-6 w-full max-w-lg relative z-10">
