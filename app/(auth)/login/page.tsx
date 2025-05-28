@@ -11,141 +11,107 @@ export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [otp, setOtp] = useState('');
   const [otpSent, setOtpSent] = useState(false);
-  
+  const [loading, setLoading] = useState(true);
+
   const router = useRouter();
   const { login, isLoggedIn } = useAuth();
 
   const API_URL = 'http://4.240.104.190/';
 
   useEffect(() => {
-    if (isLoggedIn) {
+    const emailInStorage = localStorage.getItem('email');
+    if (isLoggedIn && emailInStorage) {
       router.push('/track');
+    } else {
+      setLoading(false);
     }
   }, [isLoggedIn, router]);
 
   const handleGenerateOtp = async () => {
-  if (email && email.includes('@') && email.includes('.')) {
+    if (!email.includes('@') || !email.includes('.')) {
+      alert('Please enter a valid email address');
+      return;
+    }
+
     try {
-      const res = await fetch(`${API_URL}auth/send-otp/${encodeURIComponent(email)}`, {
-        method: 'GET',
-        headers: {
-          'Accept': 'application/json',
-        },
-      });
+      const res = await fetch(`${API_URL}auth/send-otp/${encodeURIComponent(email)}`);
+      if (!res.ok) throw new Error('Failed to send OTP');
 
-      if (!res.ok) {
-        throw new Error('Failed to send OTP');
-      }
-
-      const data = await res.json();
       setOtpSent(true);
     } catch (err) {
+      console.error(err);
       alert('Failed to send OTP. Please try again.');
     }
-  } else {
-    alert('Please enter a valid email address');
-  }
-};
+  };
 
-const handleLogin = async () => {
-  try {
-    const verifyUrl = `${API_URL}auth/verify-otp/${encodeURIComponent(email)}?otp=${encodeURIComponent(otp)}`;
-    const verifyRes = await fetch(verifyUrl, {
-      method: 'GET',
-      headers: {
-        'Accept': 'application/json',
-      },
-    });
+  const handleLogin = async () => {
+    try {
+      const verifyUrl = `${API_URL}auth/verify-otp/${encodeURIComponent(email)}?otp=${encodeURIComponent(otp)}`;
+      const verifyRes = await fetch(verifyUrl);
 
-    if (!verifyRes.ok) {
-      return;
+      if (!verifyRes.ok) {
+        alert('Invalid OTP or something went wrong.');
+        return;
+      }
+
+      const user = await verifyRes.json();
+      if (user.role !== role) {
+        alert(`Registered as ${user.role}, not ${role}`);
+        return;
+      }
+
+      localStorage.setItem('email', user.email);
+      const capitalizedRole = role.charAt(0).toUpperCase() + role.slice(1) as 'Mentee' | 'Mentor';
+      login(capitalizedRole);
+      router.push('/track');
+    } catch (error) {
+      console.error("Login failed", error);
+      alert("Something went wrong during login.");
     }
+  };
 
-    const user = await verifyRes.json();
-
-    if (user.role !== role) {
-      alert(`Registered as ${user.role}, not ${role}`);
-      return;
-    }
-
-    const capitalizedRole = role.charAt(0).toUpperCase() + role.slice(1) as 'Mentee' | 'Mentor';
-    login(capitalizedRole);
-    router.push('/track');
-  } catch (error) {
-    console.error("Login failed", error);
-    alert("Something went wrong during login.");
-  }
-};
-
-
+  if (loading) return <div className="text-white text-center py-20">Loading...</div>;
 
   return (
-    <div className="py-6 w-full max-w-lg relative z-10">
+    <div className="py-6 w-full max-w-lg relative z-10 mx-auto">
       <div className="space-y-6">
+        {/* Role Selector */}
         <div className="relative w-full">
           <button
             onClick={() => setOpen(!open)}
             className="bg-yellow-400 text-black font-medium w-full py-2 px-4 rounded-2xl flex justify-between items-center focus:outline-none transition-all"
           >
             <div className="flex items-center">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                className="h-5 w-5 text-black mr-2" 
-                fill="none" 
-                viewBox="0 0 24 24" 
-                stroke="currentColor"
-              >
-                <path 
-                  strokeLinecap="round" 
-                  strokeLinejoin="round" 
-                  strokeWidth="2" 
-                  d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
-                />
+              <svg className="h-5 w-5 text-black mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
               </svg>
               <span>{role}</span>
             </div>
-
-            <svg
-              className="h-5 w-5 ml-2"
-              xmlns="http://www.w3.org/2000/svg"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="2"
-                d="M19 9l-7 7-7-7"
-              />
+            <svg className="h-5 w-5 ml-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
             </svg>
           </button>
           {open && (
             <div className="absolute mt-2 w-full rounded-lg bg-[#1E1E1E] shadow-lg z-10">
-              <div
-                onClick={() => {
-                  setRole('mentee');
-                  setOpen(false);
-                }}
-                className="px-4 py-2 hover:bg-yellow-500 cursor-pointer rounded-t-lg"
-              >
-                Mentee
-              </div>
-              <div
-                onClick={() => {
-                  setRole('mentor');
-                  setOpen(false);
-                }}
-                className="px-4 py-2 hover:bg-yellow-500 cursor-pointer rounded-b-lg"
-              >
-                Mentor
-              </div>
+              {['mentee', 'mentor'].map((r) => (
+                <div
+                  key={r}
+                  onClick={() => {
+                    setRole(r as UserRole);
+                    setOpen(false);
+                  }}
+                  className="px-4 py-2 hover:bg-yellow-500 cursor-pointer first:rounded-t-lg last:rounded-b-lg"
+                >
+                  {r.charAt(0).toUpperCase() + r.slice(1)}
+                </div>
+              ))}
             </div>
           )}
         </div>
 
-        <div className="flex items-center bg-[#444444] rounded-2xl px-4 py-2 relative w-full border border-white/40">
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-yellow-400 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        {/* Email Input */}
+        <div className="flex items-center bg-[#444444] rounded-2xl px-4 py-2 w-full border border-white/40">
+          <svg className="h-6 w-6 text-yellow-400 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
           </svg>
           <input
@@ -157,23 +123,23 @@ const handleLogin = async () => {
           />
         </div>
 
-        {!otpSent && (
+        {/* OTP Flow */}
+        {!otpSent ? (
           <button
             onClick={handleGenerateOtp}
-            disabled={!email || !email.includes('@') || !email.includes('.')}
+            disabled={!email.includes('@') || !email.includes('.')}
             className={`block mx-auto py-3 px-6 rounded-3xl font-semibold transition duration-300 mt-4 ${
-              email && email.includes('@') && email.includes('.')
+              email.includes('@') && email.includes('.')
                 ? 'bg-yellow-400 hover:bg-yellow-500 text-black'
                 : 'bg-gray-500 text-gray-300 cursor-not-allowed'
             }`}
           >
             Generate OTP
           </button>
-        )}
-        {otpSent && (
+        ) : (
           <>
             <div className="flex items-center bg-[#444444] rounded-2xl px-4 py-2 w-full border border-white/40">
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-yellow-400 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <svg className="h-6 w-6 text-yellow-400 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
               </svg>
               <input
