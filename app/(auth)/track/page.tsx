@@ -15,7 +15,7 @@ export default function TrackSelectionPage() {
 
   async function fetchdata() {
     const icons_set = {1:Brain,2:Code,3:Smartphone,4:Monitor,5:Award};//Icons wrt ids
-    const data = await fetch("https://ammentor.up.railway.app/tracks/");    
+    const data = await fetch("http://4.240.104.190/tracks/");    
     const response: { id: number; title: string }[] = await data.json();
 
     const updatedTracks = response.map((element) => ({

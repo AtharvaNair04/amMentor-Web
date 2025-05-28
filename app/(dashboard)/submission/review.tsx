@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 interface SubmissionReviewProps {
   isMentor: boolean;
@@ -10,14 +10,40 @@ interface SubmissionReviewProps {
 }
 
 const SubmissionReview = ({ isMentor, taskId, menteeId, onClose }: SubmissionReviewProps) => {
-  const [submissionText, setSubmissionText] = useState('Contrary to popular belief, Lorem Ipsum is not simply random text. It has roots in a piece of classical Latin literature from 45 BC, making it over 2000 years old. Richard McClintock, a Latin professor at Hampden-Sydney College in Virginia,');
-  const [isSubmitted, setIsSubmitted] = useState(true);
+  const [submissionText, setSubmissionText] = useState('');
+  const [mentorNotes, setMentorNotes] = useState('Contrary to popular belief, Lorem Ipsum is not simply random text. It has roots in a piece of classical Latin literature from 45 BC, making it over 2000 years old. Richard McClintock, a Latin professor at Hampden-Sydney College in Virginia,');
   const [reviewStatus, setReviewStatus] = useState('pending'); // 'pending', 'approved', 'rejected', 'paused'
+  
+  // Mock data for task statuses - in real app, this would come from props or API
+  const mockTaskStatuses = {
+    '00': 'Reviewed',
+    '01': 'Submitted', 
+    '02': 'Submitted',
+    '03': 'In Progress',
+    '04': 'Not Started'
+  };
+  
+  // Get the actual task status from mock data
+  const taskStatus = mockTaskStatuses[taskId as keyof typeof mockTaskStatuses] || 'Not Started';
+  
+  // Pre-populate submission text for already submitted tasks
+  useEffect(() => {
+    if (taskStatus === 'Submitted' || taskStatus === 'Reviewed') {
+      setSubmissionText('Here is my completed work submission. I have uploaded the Figma design files and completed all the required components as specified in the task guidelines. The design includes responsive layouts and follows the design system requirements.');
+    }
+  }, [taskStatus]);
   
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    setIsSubmitted(true);
+    if (submissionText.trim()) {
+      // In real app, this would update the task status via API
+      console.log('Submitting work for task:', taskId);
+    }
   };
+
+  // Check if the task can be edited (only In Progress or Not Started)
+  const canEdit = !isMentor && (taskStatus === 'In Progress' || taskStatus === 'Not Started');
+  const isAlreadySubmitted = taskStatus === 'Submitted' || taskStatus === 'Reviewed';
 
   // Calculate cursor position based on days left
   const totalDays = 30;
@@ -48,7 +74,20 @@ const SubmissionReview = ({ isMentor, taskId, menteeId, onClose }: SubmissionRev
               industry. Lorem Ipsum has been the industry's standard dummy text ever since the
               1500s, when an unknown printer took a galley
             </p>
-            <div className="border-t border-white mb-2 md:mb-4 mt-2"></div>
+            
+            {/* Task Status Indicator */}
+            <div className="mt-3">
+              <span className={`inline-block px-3 py-1 rounded-full text-xs font-semibold ${
+                taskStatus === 'Reviewed' ? 'bg-green-600 text-white' :
+                taskStatus === 'Submitted' ? 'bg-primary-yellow text-black' :
+                taskStatus === 'In Progress' ? 'bg-blue-600 text-white' :
+                'bg-gray-600 text-white'
+              }`}>
+                Status: {taskStatus}
+              </span>
+            </div>
+            
+            <div className="border-t border-white mb-2 md:mb-4 mt-4"></div>
           </div>
         </div>
         
@@ -91,10 +130,12 @@ const SubmissionReview = ({ isMentor, taskId, menteeId, onClose }: SubmissionRev
                       <span className="text-primary-yellow font-semibold">Starting Date: </span>
                       <span className="ml-2">10/05/2025</span>
                     </div>
-                    <div className="flex">
-                      <span className="text-primary-yellow font-semibold">Submitted Date: </span>
-                      <span className="ml-2">04/05/2025</span>
-                    </div>
+                    {isAlreadySubmitted && (
+                      <div className="flex">
+                        <span className="text-primary-yellow font-semibold">Submitted Date: </span>
+                        <span className="ml-2">04/05/2025</span>
+                      </div>
+                    )}
                   </div>
                 </div>
               )}
@@ -102,23 +143,76 @@ const SubmissionReview = ({ isMentor, taskId, menteeId, onClose }: SubmissionRev
             
             <div className="mb-8 md:mb-10">
               <h2 className="font-bold mb-3 md:mb-4 text-white-text">WORK SUBMISSION</h2>
-              <div className="bg-dark-grey rounded-md p-3 md:p-4 min-h-[100px] md:min-h-[120px] text-sm md:text-base text-white-text mb-4 md:mb-6">
-                {submissionText}
-              </div>
               
-              {!isMentor && (
-                <div className="flex justify-center">
-                  <button 
-                    type="submit"
-                    disabled={isSubmitted}
-                    className={`px-6 md:px-10 py-2 rounded-full text-sm md:text-md font-bold shadow-md ${
-                      isSubmitted 
-                        ? "bg-grey text-gray-300" 
-                        : "bg-primary-yellow text-dark-bg hover:shadow-xl transition-shadow"
-                    }`}
-                  >
-                    {isSubmitted ? "SUBMITTED" : "SUBMIT"}
-                  </button>
+              {/* For Mentee: Different display based on task status */}
+              {!isMentor ? (
+                <>
+                  {canEdit ? (
+                    /* Editable textarea for In Progress or Not Started tasks */
+                    <>
+                      <textarea
+                        value={submissionText}
+                        onChange={(e) => setSubmissionText(e.target.value)}
+                        placeholder="Submit your work link or description here..."
+                        className="w-full bg-dark-grey rounded-md p-3 md:p-4 min-h-[100px] md:min-h-[120px] text-sm md:text-base text-white-text mb-4 md:mb-6 resize-none border-none outline-none placeholder-gray-500"
+                      />
+                      
+                      <div className="flex justify-center">
+                        <button 
+                          type="submit"
+                          disabled={!submissionText.trim()}
+                          onClick={(e) => {
+                            e.preventDefault();
+                            if (submissionText.trim()) {
+                              // In real app, this would call an API to update the task status
+                              console.log('Submitting work for task:', taskId);
+                              alert('Work submitted successfully!');
+                            }
+                          }}
+                          className={`px-6 md:px-10 py-2 rounded-full text-sm md:text-md font-bold shadow-md ${
+                            !submissionText.trim()
+                              ? "bg-gray-600 text-gray-400 cursor-not-allowed"
+                              : "bg-primary-yellow text-dark-bg hover:shadow-xl transition-shadow"
+                          }`}
+                        >
+                          SUBMIT
+                        </button>
+                      </div>
+                    </>
+                  ) : (
+                    /* Read-only display for Submitted or Reviewed tasks */
+                    <>
+                      <div className="bg-dark-grey rounded-md p-3 md:p-4 min-h-[100px] md:min-h-[120px] text-sm md:text-base text-white-text mb-4 md:mb-6 border border-gray-600">
+                        {submissionText || 'No submission provided'}
+                      </div>
+                      
+                      <div className="flex justify-center">
+                        <button 
+                          disabled
+                          className="px-6 md:px-10 py-2 rounded-full text-sm md:text-md font-bold bg-gray-600 text-gray-400 cursor-not-allowed"
+                        >
+                          {taskStatus === 'Reviewed' ? 'REVIEWED' : 'SUBMITTED'}
+                        </button>
+                      </div>
+                      
+                      {taskStatus === 'Submitted' && (
+                        <p className="text-center text-xs text-gray-400 mt-2">
+                          Your work has been submitted and is awaiting review.
+                        </p>
+                      )}
+                      
+                      {taskStatus === 'Reviewed' && (
+                        <p className="text-center text-xs text-green-400 mt-2">
+                          Your work has been reviewed by your mentor.
+                        </p>
+                      )}
+                    </>
+                  )}
+                </>
+              ) : (
+                /* For Mentor: Always read-only display */
+                <div className="bg-dark-grey rounded-md p-3 md:p-4 min-h-[100px] md:min-h-[120px] text-sm md:text-base text-white-text mb-4 md:mb-6">
+                  {submissionText || 'No submission provided'}
                 </div>
               )}
             </div>
@@ -137,9 +231,21 @@ const SubmissionReview = ({ isMentor, taskId, menteeId, onClose }: SubmissionRev
           <div className="w-full md:w-1/3 border-t md:border-t-0 md:border-l border-gray-700 pt-6 md:pt-0 md:pl-8">
             <div className="mb-6">
               <h2 className="font-bold mb-3 md:mb-4 text-white-text">MENTOR NOTES:</h2>
-              <div className="bg-dark-grey rounded-md p-3 md:p-4 min-h-[100px] md:min-h-[120px] text-sm md:text-base text-white-text mb-4 md:mb-6">
-                Contrary to popular belief, Lorem Ipsum is not simply random text. It has roots in a piece of classical Latin literature from 45 BC, making it over 2000 years old. Richard McClintock, a Latin professor at Hampden-Sydney College in Virginia,
-              </div>
+              
+              {/* For Mentor: Text input area */}
+              {isMentor ? (
+                <textarea
+                  value={mentorNotes}
+                  onChange={(e) => setMentorNotes(e.target.value)}
+                  placeholder="Add your notes for the mentee here..."
+                  className="w-full bg-dark-grey rounded-md p-3 md:p-4 min-h-[100px] md:min-h-[120px] text-sm md:text-base text-white-text mb-4 md:mb-6 resize-none border-none outline-none"
+                />
+              ) : (
+                /* For Mentee: Read-only display */
+                <div className="bg-dark-grey rounded-md p-3 md:p-4 min-h-[100px] md:min-h-[120px] text-sm md:text-base text-white-text mb-4 md:mb-6">
+                  {mentorNotes}
+                </div>
+              )}
             </div>
             
             <div className="mt-6 md:mt-10">
@@ -164,8 +270,8 @@ const SubmissionReview = ({ isMentor, taskId, menteeId, onClose }: SubmissionRev
                 </div>
               </div>
 
-              {/* Mentor review buttons */}
-              {isMentor && (
+              {/* Mentor review buttons - only show for submitted tasks */}
+              {isMentor && (taskStatus === 'Submitted') && (
                 <div className="flex justify-between gap-2">
                   <button 
                     onClick={() => setReviewStatus('rejected')}
@@ -191,6 +297,19 @@ const SubmissionReview = ({ isMentor, taskId, menteeId, onClose }: SubmissionRev
                   >
                     Pause
                   </button>
+                </div>
+              )}
+
+              {/* Status message for mentors */}
+              {isMentor && taskStatus === 'Reviewed' && (
+                <div className="text-center text-green-400 text-sm">
+                  This task has been reviewed
+                </div>
+              )}
+              
+              {isMentor && (taskStatus === 'In Progress' || taskStatus === 'Not Started') && (
+                <div className="text-center text-gray-400 text-sm">
+                  Waiting for mentee submission
                 </div>
               )}
             </div>

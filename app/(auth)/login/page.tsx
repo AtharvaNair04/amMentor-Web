@@ -5,8 +5,8 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '@/app/context/authcontext';
 
 export default function LoginPage() {
-  type UserRole = 'Mentee' | 'Mentor';
-  const [role, setRole] = useState<UserRole>('Mentee');
+  type UserRole = 'mentee' | 'mentor';
+  const [role, setRole] = useState<UserRole>('mentee');
   const [open, setOpen] = useState(false);
   const [email, setEmail] = useState('');
   const [otp, setOtp] = useState('');
@@ -15,7 +15,7 @@ export default function LoginPage() {
   const router = useRouter();
   const { login, isLoggedIn } = useAuth();
 
-  const API_URL = 'https://ammentor.up.railway.app/';
+  const API_URL = 'http://4.240.104.190/';
 
   useEffect(() => {
     if (isLoggedIn) {
@@ -23,34 +23,60 @@ export default function LoginPage() {
     }
   }, [isLoggedIn, router]);
 
-  const handleGenerateOtp = () => {
-    if (email && email.includes('@') && email.includes('.')) {
-      setOtpSent(true);
-      console.log('OTP sent to email:', email);
-    } else {
-      alert('Please enter a valid email address');
-    }
-  };
+  const handleGenerateOtp = async () => {
+  if (email && email.includes('@') && email.includes('.')) {
+    try {
+      const res = await fetch(`${API_URL}auth/send-otp/${encodeURIComponent(email)}`, {
+        method: 'GET',
+        headers: {
+          'Accept': 'application/json',
+        },
+      });
 
-  const handleLogin = async () => {
+      if (!res.ok) {
+        throw new Error('Failed to send OTP');
+      }
+
+      const data = await res.json();
+      setOtpSent(true);
+    } catch (err) {
+      alert('Failed to send OTP. Please try again.');
+    }
+  } else {
+    alert('Please enter a valid email address');
+  }
+};
+
+const handleLogin = async () => {
   try {
-    const res = await fetch(`${API_URL}auth/user/${email}`);
-    if (!res.ok) {
-      alert("User not found. Please register first.");
+    const verifyUrl = `${API_URL}auth/verify-otp/${encodeURIComponent(email)}?otp=${encodeURIComponent(otp)}`;
+    const verifyRes = await fetch(verifyUrl, {
+      method: 'GET',
+      headers: {
+        'Accept': 'application/json',
+      },
+    });
+
+    if (!verifyRes.ok) {
       return;
     }
-    const user = await res.json();
+
+    const user = await verifyRes.json();
+
     if (user.role !== role) {
       alert(`Registered as ${user.role}, not ${role}`);
       return;
     }
-    login(role);
+
+    const capitalizedRole = role.charAt(0).toUpperCase() + role.slice(1) as 'Mentee' | 'Mentor';
+    login(capitalizedRole);
     router.push('/track');
   } catch (error) {
     console.error("Login failed", error);
     alert("Something went wrong during login.");
   }
 };
+
 
 
   return (
@@ -98,7 +124,7 @@ export default function LoginPage() {
             <div className="absolute mt-2 w-full rounded-lg bg-[#1E1E1E] shadow-lg z-10">
               <div
                 onClick={() => {
-                  setRole('Mentee');
+                  setRole('mentee');
                   setOpen(false);
                 }}
                 className="px-4 py-2 hover:bg-yellow-500 cursor-pointer rounded-t-lg"
@@ -107,7 +133,7 @@ export default function LoginPage() {
               </div>
               <div
                 onClick={() => {
-                  setRole('Mentor');
+                  setRole('mentor');
                   setOpen(false);
                 }}
                 className="px-4 py-2 hover:bg-yellow-500 cursor-pointer rounded-b-lg"
