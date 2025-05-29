@@ -16,7 +16,7 @@ export default function LoginPage() {
   const router = useRouter();
   const { login, isLoggedIn } = useAuth();
 
-  const API_URL = 'http://4.240.104.190/';
+  const API_URL = 'https://ammentor.ganidande.com/';
 
   useEffect(() => {
     const emailInStorage = localStorage.getItem('email');
