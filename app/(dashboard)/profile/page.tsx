@@ -13,7 +13,7 @@ import {
 } from 'react-icons/fa';
 import { useAuth } from '@/app/context/authcontext';
 
-const API_URL = 'https://ammentor.ganidande.com/';
+const API_URL = 'https://amapi.amfoss.in/';
 
 const ProfilePage = () => {
   const { logout } = useAuth();

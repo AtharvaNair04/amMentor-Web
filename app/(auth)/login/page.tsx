@@ -16,12 +16,17 @@ export default function LoginPage() {
   const router = useRouter();
   const { login, isLoggedIn } = useAuth();
 
-  const API_URL = 'https://ammentor.ganidande.com/';
+  const API_URL = 'https://amapi.amfoss.in/';
 
   useEffect(() => {
     const emailInStorage = localStorage.getItem('email');
     if (isLoggedIn && emailInStorage) {
-      router.push('/track');
+      const userRole = localStorage.getItem('userRole');
+      if (userRole === 'Mentor') {
+        router.push('/dashboard');
+      } else {
+        router.push('/track');
+      }
     } else {
       setLoading(false);
     }
@@ -62,8 +67,18 @@ export default function LoginPage() {
 
       localStorage.setItem('email', user.email);
       const capitalizedRole = role.charAt(0).toUpperCase() + role.slice(1) as 'Mentee' | 'Mentor';
+      
+      // Store user role for future reference
+      localStorage.setItem('userRole', capitalizedRole);
+      
       login(capitalizedRole);
-      router.push('/track');
+      
+      // Route based on role
+      if (capitalizedRole === 'Mentor') {
+        router.push('/dashboard');
+      } else {
+        router.push('/track');
+      }
     } catch (error) {
       console.error("Login failed", error);
       alert("Something went wrong during login.");
@@ -75,7 +90,6 @@ export default function LoginPage() {
   return (
     <div className="py-6 w-full max-w-lg relative z-10 mx-auto">
       <div className="space-y-6">
-        {/* Role Selector */}
         <div className="relative w-full">
           <button
             onClick={() => setOpen(!open)}

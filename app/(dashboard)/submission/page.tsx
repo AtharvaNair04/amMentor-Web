@@ -8,6 +8,16 @@ import { useRouter } from 'next/navigation';
 // Import the review component directly
 import SubmissionReview from "./review";
 
+interface Task {
+    track_id: number;
+    task_no: number;
+    title: string;
+    description: string;
+    points: number;
+    deadline: string;
+    id: number;
+}
+
 const TasksPage = () => {
     const { userRole, isLoggedIn } = useAuth();
     const router = useRouter();
@@ -15,70 +25,138 @@ const TasksPage = () => {
     const [showReview, setShowReview] = useState(false);
     const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
     const [selectedMenteeId, setSelectedMenteeId] = useState<string | null>(null);
+    const [tasks, setTasks] = useState<Task[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [currentTrack, setCurrentTrack] = useState<{id: number; name: string} | null>(null);
     
     useEffect(() => {
         if (!isLoggedIn) {
             router.push('/');
+            return;
         }
-    }, [isLoggedIn, router]);
+
+        // If user is mentee but no track selected, redirect to track selection
+        if (userRole === 'Mentee') {
+            const sessionTrack = sessionStorage.getItem('currentTrack');
+            if (!sessionTrack) {
+                router.push('/track');
+                return;
+            }
+            setCurrentTrack(JSON.parse(sessionTrack));
+        }
+
+        const fetchTasks = async () => {
+            try {
+                let trackId;
+                
+                if (userRole === 'Mentor') {
+                    // For mentors, you might want to fetch tasks from all tracks or a default track
+                    // Adjust this logic based on your requirements
+                    trackId = 1; // Default track for mentors, or modify as needed
+                } else {
+                    // For mentees, get track from session
+                    const sessionTrack = sessionStorage.getItem('currentTrack');
+                    
+                    if (!sessionTrack) {
+                        // If no track selected, redirect to track selection
+                        router.push('/track');
+                        return;
+                    }
+                    const trackData = JSON.parse(sessionTrack);
+                    trackId = trackData.id;
+                }
+
+                const response = await fetch(`https://amapi.amfoss.in/tracks/${trackId}/tasks`);
+                
+                if (!response.ok) {
+                    throw new Error('Failed to fetch tasks');
+                }
+
+                const tasksData: Task[] = await response.json();
+                setTasks(tasksData);
+                setLoading(false);
+            } catch (error) {
+                console.error('Error fetching tasks:', error);
+                
+                // If error and user is mentee, redirect to track selection
+                if (userRole === 'Mentee') {
+                    router.push('/track');
+                } else {
+                    // For mentors, show error state
+                    setLoading(false);
+                }
+            }
+        };
+
+        fetchTasks();
+    }, [isLoggedIn, router, userRole]);
 
     const ismentor = userRole === 'Mentor';
 
-    const AllTasksMentee: string[][] = [
-        ["00", "Figma Design Task", "Reviewed"],
-        ["01", "Figma Design Task", "Submitted"],
-        ["02", "Figma Design Task", "Submitted"],
-        ["03", "Figma Design Task", "In Progress"],
-        ["04", "Figma Design Task", "Not Started"]
-    ];
+    // Dummy status mapping for now (since status is not in DB yet)
+    const getDummyStatus = (taskId: number, isMentor: boolean): string => {
+        const statuses = isMentor 
+            ? ["Reviewed(4)", "Submitted(2)", "In Progress(3)", "Not Started(4)"]
+            : ["Reviewed", "Submitted", "In Progress", "Not Started"];
+        
+        return statuses[taskId % statuses.length];
+    };
 
-    const AllTasksMentor: string[][] = [
-        ["00", "Figma Design Task", "Reviewed(4)"],
-        ["01", "Figma Design Task", "Pending(2)"],
-        ["02", "Figma Design Task", "Pending(3)"],
-        ["03", "Figma Design Task", "In Progress(3)"],
-        ["04", "Figma Design Task", "Not Started(4)"]
-    ];
+    // Convert API tasks to display format with dummy statuses
+    const getFormattedTasks = (): string[][] => {
+        return tasks.map((task, index) => [
+            task.id.toString(),
+            task.title,
+            getDummyStatus(index, ismentor)
+        ]);
+    };
 
-    const AllMentees: string[][][] = [
-        [["Person1", "5 days", "3 files", "Reviewed"], ["Person2", "7 days", "2 files", "Reviewed"], ["Person3", "4 days", "1 file", "Reviewed"], ["Person4", "6 days", "5 files", "Reviewed"]],
-        [["Person1", "3 days", "2 files", "Submitted"], ["Person2", "8 days", "4 files", "Submitted"], ["Person3", "2 days", "3 files", "Reviewed"], ["Person4", "9 days", "1 file", "Reviewed"]],
-        [["Person1", "6 days", "5 files", "Submitted"], ["Person2", "4 days", "3 files", "Submitted"], ["Person3", "7 days", "2 files", "Submitted"], ["Person4", "5 days", "4 files", "Reviewed"]],
-        [["Person1", "2 days", "1 file", "Reviewed"], ["Person2", "9 days", "5 files", "Submitted"], ["Person3", "8 days", "4 files", "Not Submitted"], ["Person4", "3 days", "2 files", "Not Submitted"]],
-        [["Person1", "7 days", "3 files", "Not Submitted"], ["Person2", "5 days", "2 files", "Not Submitted"], ["Person3", "6 days", "1 file", "Not Submitted"], ["Person4", "4 days", "4 files", "Not Submitted"]]
-    ];
+    // Dummy mentees data (keeping original structure for now)
+    const getAllMentees = (): string[][][] => {
+        return tasks.map((_, taskIndex) => [
+            ["Person1", "5 days", "3 files", "Reviewed"],
+            ["Person2", "7 days", "2 files", "Submitted"],
+            ["Person3", "4 days", "1 file", "In Progress"],
+            ["Person4", "6 days", "5 files", "Not Started"]
+        ]);
+    };
 
-    const CurrentTaskIndex: number = 3;
+    const CurrentTaskIndex: number = 0; // First task is highlighted
 
-    const getSubmittedTasks = (): string[][] => AllTasksMentee.filter(task => task[2] === "Submitted");
-    const getReviewedTasks = (): string[][] => AllTasksMentee.filter(task => task[2] === "Reviewed");
-    const getReviewedMentorTasks = (): string[][] => AllTasksMentor.filter(task => task[2].includes("Reviewed"));
-    const getPendingMentorTasks = (): string[][] => AllTasksMentor.filter(task => task[2].includes("Pending"));
+    const getSubmittedTasks = (): string[][] => getFormattedTasks().filter(task => task[2] === "Submitted");
+    const getReviewedTasks = (): string[][] => getFormattedTasks().filter(task => task[2] === "Reviewed");
+    const getReviewedMentorTasks = (): string[][] => getFormattedTasks().filter(task => task[2].includes("Reviewed"));
+    const getSubmittedMentorTasks = (): string[][] => getFormattedTasks().filter(task => task[2].includes("Submitted"));
 
     const getTasksByToggle = (toggleIndex: number): string[][] => {
+        const formattedTasks = getFormattedTasks();
+        
         if (ismentor) {
-            if (toggleIndex === 0) return AllTasksMentor;
+            if (toggleIndex === 0) return formattedTasks;
             if (toggleIndex === 1) return getReviewedMentorTasks();
-            return getPendingMentorTasks();
+            return getSubmittedMentorTasks();
         } else {
-            if (toggleIndex === 0) {return AllTasksMentee;}
+            if (toggleIndex === 0) return formattedTasks;
             if (toggleIndex === 1) return getSubmittedTasks();
             return getReviewedTasks();
         }
     };
 
-    const [toggledTasks, setToggledTasks] = useState<string[][]>(getTasksByToggle(0));
+    const [toggledTasks, setToggledTasks] = useState<string[][]>([]);
 
     useEffect(() => {
-        setToggledTasks(getTasksByToggle(toggles.findIndex(toggle => toggle === true) || 0));
-    }, [userRole]);
+        if (tasks.length > 0) {
+            setToggledTasks(getTasksByToggle(toggles.findIndex(toggle => toggle === true) || 0));
+        }
+    }, [tasks, userRole, toggles]);
 
     const getFilteredMentees = (): string[][][] => {
         if (!ismentor) return [];
+        const allMentees = getAllMentees();
         return toggledTasks.map(task => {
             const taskId = task[0];
-            const originalTaskIndex = AllTasksMentor.findIndex(t => t[0] === taskId);
-            return originalTaskIndex >= 0 ? AllMentees[originalTaskIndex] : [];
+            const originalTaskIndex = tasks.findIndex(t => t.id.toString() === taskId);
+            return originalTaskIndex >= 0 ? allMentees[originalTaskIndex] : [];
         });
     };
 
@@ -107,8 +185,42 @@ const TasksPage = () => {
         setShowReview(false);
     };
 
+    // Function to change track (for mentees)
+    const handleChangeTrack = () => {
+        sessionStorage.removeItem('currentTrack');
+        router.push('/track');
+    };
+
     if (!isLoggedIn) {
         return null; 
+    }
+
+    if (loading) {
+        return (
+            <div className="text-white flex justify-center items-center h-screen">
+                <div className="text-xl">Loading tasks...</div>
+            </div>
+        );
+    }
+
+    if (tasks.length === 0) {
+        return (
+            <div className="text-white flex justify-center items-center h-screen">
+                <div className="text-xl">
+                    {userRole === 'Mentee' 
+                        ? 'No tasks found for this track. Please select a different track.' 
+                        : 'No tasks found.'}
+                </div>
+                {userRole === 'Mentee' && (
+                    <button 
+                        onClick={handleChangeTrack}
+                        className="ml-4 bg-yellow-400 text-black px-4 py-2 rounded-lg hover:bg-yellow-500"
+                    >
+                        Select Track
+                    </button>
+                )}
+            </div>
+        );
     }
 
     return (
@@ -122,6 +234,21 @@ const TasksPage = () => {
                 />
             ) : (
                 <>
+                    {/* Show current track info for mentees */}
+                    {userRole === 'Mentee' && currentTrack && (
+                        <div className="text-center mb-4">
+                            <div className="text-yellow-400 text-lg">
+                                Current Track: {currentTrack.name}
+                            </div>
+                            <button 
+                                onClick={handleChangeTrack}
+                                className="text-sm text-gray-400 hover:text-yellow-400 underline"
+                            >
+                                Change Track
+                            </button>
+                        </div>
+                    )}
+                    
                     <div className="bg-deeper-grey rounded-full w-[90%] sm:w-[70%] md:w-[50%] flex justify-between m-auto mt-5">
                         <button 
                             className={`rounded-full w-1/3 py-2 text-sm sm:text-lg md:text-xl lg:text-2xl transition-colors ${toggles[0] ? "bg-primary-yellow text-black" : "bg-deeper-grey"}`} 
@@ -139,7 +266,7 @@ const TasksPage = () => {
                             className={`rounded-full w-1/3 py-2 text-sm sm:text-lg md:text-xl lg:text-2xl transition-colors ${toggles[2] ? "bg-primary-yellow text-black" : "bg-deeper-grey"}`} 
                             onClick={() => toggleState(2)}
                         >
-                            {ismentor ? "Pending Tasks" : "Reviewed"}
+                            {ismentor ? "Submitted Tasks" : "Reviewed"}
                         </button>
                     </div>
                     <div className="w-[95%] sm:w-[85%] md:w-[80%] mt-7 h-[80vh] overflow-scroll scrollbar-hide px-5 m-auto">
