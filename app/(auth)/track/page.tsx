@@ -2,33 +2,72 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { useAuth } from '@/app/context/authcontext';
 import { Brain, Code, Smartphone, Monitor, Award, HelpCircle } from 'lucide-react';
 
 export default function TrackSelectionPage() {
   const [selectedTrack, setSelectedTrack] = useState<number>(-1);
   const [tracks, updatetracks] = useState<{ id: number; name: string; icon: React.ElementType }[]>([]);
+  const [loading, setLoading] = useState(true);
+  const { userRole, isLoggedIn } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
-    async function fetchdata() {
-      const icons_set = {1:Brain,2:Code,3:Smartphone,4:Monitor,5:Award};
-      const data = await fetch("https://ammentor.ganidande.com/tracks/");    
-      const response: { id: number; title: string }[] = await data.json();
+    if (!isLoggedIn) {
+      router.push('/');
+      return;
+    }
+    if (userRole === 'Mentor') {
+      router.push('/dashboard');
+      return;
+    }
+    if (userRole !== 'Mentee') {
+      router.push('/');
+      return;
+    }
 
-      const updatedTracks = response.map((element) => ({
-        id: element.id,
-        name: element.title,
-        icon: icons_set[element.id as keyof typeof icons_set] || HelpCircle, // fallback icon
-      }));
-      updatetracks(updatedTracks);
+    async function fetchdata() {
+      try {
+        const icons_set = {1:Brain,2:Code,3:Smartphone,4:Monitor,5:Award};
+        const data = await fetch("https://amapi.amfoss.in/tracks/");    
+        const response: { id: number; title: string }[] = await data.json();
+
+        const updatedTracks = response.map((element) => ({
+          id: element.id,
+          name: element.title,
+          icon: icons_set[element.id as keyof typeof icons_set] || HelpCircle, 
+        }));
+        updatetracks(updatedTracks);
+        setLoading(false);
+      } catch (error) {
+        console.error('Failed to fetch tracks:', error);
+        setLoading(false);
+      }
     }
     fetchdata();
-  }, []);
+  }, [router, userRole, isLoggedIn]);
 
   const handleTrackSelect = (trackId: number) => {
     setSelectedTrack(trackId);
-    router.push(`/dashboard?track=${trackId}`);
+    
+    const selectedTrackObj = tracks.find(track => track.id === trackId);
+    if (selectedTrackObj) {
+      sessionStorage.setItem('currentTrack', JSON.stringify({
+        id: selectedTrackObj.id,
+        name: selectedTrackObj.name
+      }));
+    }
+    
+    router.push('/dashboard');
   };
+
+  if (loading) {
+    return (
+      <div className="flex flex-col items-center w-full">
+        <div className="text-white text-center py-20">Loading tracks...</div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col items-center w-full">
