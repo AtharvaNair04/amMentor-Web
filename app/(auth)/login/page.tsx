@@ -68,12 +68,10 @@ export default function LoginPage() {
       localStorage.setItem('email', user.email);
       const capitalizedRole = role.charAt(0).toUpperCase() + role.slice(1) as 'Mentee' | 'Mentor';
       
-      // Store user role for future reference
       localStorage.setItem('userRole', capitalizedRole);
       
       login(capitalizedRole);
       
-      // Route based on role
       if (capitalizedRole === 'Mentor') {
         router.push('/dashboard');
       } else {

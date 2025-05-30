@@ -50,10 +50,8 @@ export default function TrackSelectionPage() {
   const handleTrackSelect = (trackId: number) => {
     setSelectedTrack(trackId);
     
-    // Store selected track in session/state for immediate use, not localStorage
     const selectedTrackObj = tracks.find(track => track.id === trackId);
     if (selectedTrackObj) {
-      // You can pass this data through router state or context instead of localStorage
       sessionStorage.setItem('currentTrack', JSON.stringify({
         id: selectedTrackObj.id,
         name: selectedTrackObj.name

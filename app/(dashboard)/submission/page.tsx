@@ -35,7 +35,6 @@ const TasksPage = () => {
             return;
         }
 
-        // If user is mentee but no track selected, redirect to track selection
         if (userRole === 'Mentee') {
             const sessionTrack = sessionStorage.getItem('currentTrack');
             if (!sessionTrack) {
@@ -50,15 +49,11 @@ const TasksPage = () => {
                 let trackId;
                 
                 if (userRole === 'Mentor') {
-                    // For mentors, you might want to fetch tasks from all tracks or a default track
-                    // Adjust this logic based on your requirements
-                    trackId = 1; // Default track for mentors, or modify as needed
+                    trackId = 1; 
                 } else {
-                    // For mentees, get track from session
                     const sessionTrack = sessionStorage.getItem('currentTrack');
                     
                     if (!sessionTrack) {
-                        // If no track selected, redirect to track selection
                         router.push('/track');
                         return;
                     }
@@ -78,11 +73,9 @@ const TasksPage = () => {
             } catch (error) {
                 console.error('Error fetching tasks:', error);
                 
-                // If error and user is mentee, redirect to track selection
                 if (userRole === 'Mentee') {
                     router.push('/track');
                 } else {
-                    // For mentors, show error state
                     setLoading(false);
                 }
             }
@@ -93,7 +86,6 @@ const TasksPage = () => {
 
     const ismentor = userRole === 'Mentor';
 
-    // Dummy status mapping for now (since status is not in DB yet)
     const getDummyStatus = (taskId: number, isMentor: boolean): string => {
         const statuses = isMentor 
             ? ["Reviewed(4)", "Submitted(2)", "In Progress(3)", "Not Started(4)"]
@@ -102,7 +94,6 @@ const TasksPage = () => {
         return statuses[taskId % statuses.length];
     };
 
-    // Convert API tasks to display format with dummy statuses
     const getFormattedTasks = (): string[][] => {
         return tasks.map((task, index) => [
             task.id.toString(),
@@ -111,7 +102,6 @@ const TasksPage = () => {
         ]);
     };
 
-    // Dummy mentees data (keeping original structure for now)
     const getAllMentees = (): string[][][] => {
         return tasks.map((_, taskIndex) => [
             ["Person1", "5 days", "3 files", "Reviewed"],
