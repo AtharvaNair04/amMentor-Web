@@ -27,7 +27,7 @@ const LeaderBoardPage = () => {
     options.push(<option key={element.id} value={element.id}  className="bg-deep-grey text-white">{element.name}</option>);
   });
 
-
+  console.log(leaderboardData);
   useEffect(() => {
     if (!isLoggedIn) {
       router.push('/');
