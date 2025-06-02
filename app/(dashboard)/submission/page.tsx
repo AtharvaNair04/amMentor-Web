@@ -66,7 +66,6 @@ const TasksPage = () => {
                 if (!response.ok) {
                     throw new Error('Failed to fetch tasks');
                 }
-
                 const tasksData: Task[] = await response.json();
                 setTasks(tasksData);
                 setLoading(false);

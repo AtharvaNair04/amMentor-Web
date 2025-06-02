@@ -19,27 +19,28 @@ function CurrentTask({mentor=false}:{mentor?:boolean}){
     );
 }
 
-function ReviewedTask(){
-    const tasks = [];
-    for(let i=0;i<20;i++){
-        tasks.push(
+
+
+
+function ReviewedTask({reviewed_tasks}:{reviewed_tasks:string[][]}){
+    const tasks = reviewed_tasks.map((task) => (
         <div 
-        key={i} 
-        className="bg-deep-grey rounded-lg sm:rounded-xl md:rounded-2xl font-bold hover:bg-primary-yellow">
+            key={task[0]}
+            className="bg-deep-grey rounded-lg sm:rounded-xl md:rounded-2xl font-bold hover:bg-primary-yellow">
             <div className="flex justify-between p-2 sm:p-3 hover:text-black text-sm sm:text-base">
-                <h1>01</h1>
-                <h1>Tasks Name</h1>
+                <h1>{task[0]}</h1> {/* Task ID */}
+                <h1>{task[1]}</h1> {/* Task Title */}
             </div>
         </div>
-        )
-    }
+    ));
+
     return(
-    <div className="bg-deeper-grey rounded-xl md:rounded-3xl p-2 sm:p-3 pb-4 sm:pb-5 w-full">
-        <h1 className="text-white font-bold text-base sm:text-lg md:text-xl px-2 sm:px-4 md:px-16 p-1 sm:p-2 md:p-4">REVIEWED TASKS</h1>
-        <div className={`h-48 sm:h-56 md:h-44 overflow-y-auto scrollbar-hide flex flex-col gap-2 sm:gap-3`}>
-            {tasks}
+        <div className="bg-deeper-grey rounded-xl md:rounded-3xl p-2 sm:p-3 pb-4 sm:pb-5 w-full">
+            <h1 className="text-white font-bold text-base sm:text-lg md:text-xl px-2 sm:px-4 md:px-16 p-1 sm:p-2 md:p-4">REVIEWED TASKS</h1>
+            <div className={`h-48 sm:h-56 md:h-44 overflow-y-auto scrollbar-hide flex flex-col gap-2 sm:gap-3`}>
+                {tasks.length > 0 ? tasks : <div className="text-gray-400 text-center p-4">No reviewed tasks</div>}
+            </div>
         </div>
-    </div>
     );
 }
 
@@ -67,37 +68,33 @@ function FeedbackProvided(){
     );
 }
 
-function UpcomingTask(){
-    const tasks = [];
-    for(let i=0;i<20;i++){
-        tasks.push(
+function UpcomingTask({upcoming_tasks}:{upcoming_tasks:string[][]}){
+    const tasks = upcoming_tasks.map((task) => (
         <div 
-        key={i} 
-        className="bg-deep-grey rounded-lg sm:rounded-xl md:rounded-2xl font-bold hover:bg-primary-yellow">
+            key={task[0]} 
+            className="bg-deep-grey rounded-lg sm:rounded-xl md:rounded-2xl font-bold hover:bg-primary-yellow">
             <div className="flex justify-between p-2 sm:p-3 hover:text-black text-sm sm:text-base">
-                <h1>01</h1>
-                <h1>Tasks Name</h1>
+                <h1>{task[0]}</h1> {/* Task ID */}
+                <h1>{task[1]}</h1> {/* Task Title */}
             </div>
         </div>
-        )
-    }
+    ));
+
     return(
-    <div className="bg-deeper-grey rounded-xl md:rounded-3xl p-2 sm:p-3 pb-4 sm:pb-5 w-full">
-        <h1 className="text-white font-bold text-base sm:text-lg md:text-xl px-2 sm:px-4 md:px-16 p-1 sm:p-2 md:p-4">UPCOMING TASKS</h1>
-        <div className={`h-48 sm:h-56 md:h-44 overflow-y-auto scrollbar-hide flex flex-col gap-2 sm:gap-3`}>
-            {tasks}
+        <div className="bg-deeper-grey rounded-xl md:rounded-3xl p-2 sm:p-3 pb-4 sm:pb-5 w-full">
+            <h1 className="text-white font-bold text-base sm:text-lg md:text-xl px-2 sm:px-4 md:px-16 p-1 sm:p-2 md:p-4">UPCOMING TASKS</h1>
+            <div className={`h-48 sm:h-56 md:h-44 overflow-y-auto scrollbar-hide flex flex-col gap-2 sm:gap-3`}>
+                {tasks.length > 0 ? tasks : <div className="text-gray-400 text-center p-4">No upcoming tasks</div>}
+            </div>
         </div>
-    </div>
     );
 }
 
-function PlayerStats(){
-    const rank = 13;
-    const points = 3000;
+function PlayerStats({rank,points}:{rank:number,points:number}){
     return(
     <div className="flex flex-col sm:flex-row gap-4 md:gap-6 lg:gap-9 w-full">
         <div className="bg-primary-yellow rounded-xl md:rounded-3xl p-3 sm:p-4 md:p-6 lg:p-8 text-black flex-1">
-            <h2 className="font-bold text-base sm:text-lg md:text-xl text-center underline px-1 sm:px-2 md:px-6 lg:px-9 mb-1 sm:mb-2 md:mb-4">YOUR RANK</h2>
+            <h2 className="font-bold text-base sm:text-lg md:text-xl text-center underline px-1 sm:px-2 md:px-6 lg:px-9 mb-1 sm:mb-2 md:mb-4">TASKS COMPLETED</h2>
             <h1 className="font-extralight text-4xl sm:text-5xl md:text-6xl lg:text-7xl text-center">#{rank}</h1>
         </div>
         <div className="bg-primary-yellow rounded-xl md:rounded-3xl p-3 sm:p-4 md:p-6 lg:p-8 text-black flex-1">
@@ -108,10 +105,8 @@ function PlayerStats(){
     );
 }
 
-function PlayerProgress() {
-    const points = 3000;
-    const totalpoints = 5000;
-    const progressPercentage = (points / totalpoints) * 100;
+function PlayerProgress({tasks,totaltasks}:{tasks:number,totaltasks:number}) {
+    const progressPercentage = (tasks / totaltasks) * 100;
     
     return (
         <div className="flex mt-2 sm:mt-3">
@@ -121,7 +116,7 @@ function PlayerProgress() {
                     <div className={`bg-primary-yellow rounded-full h-4 sm:h-6 md:h-8`} style={{ width: `${progressPercentage}%` }}>
                     </div>
                 </div>
-                <h2 className="font-bold text-primary-yellow text-sm sm:text-base md:text-lg px-1 sm:px-2 md:px-6 lg:px-9 text-right pt-1 sm:pt-2 md:pt-3">{points}/{totalpoints} points</h2>
+                <h2 className="font-bold text-primary-yellow text-sm sm:text-base md:text-lg px-1 sm:px-2 md:px-6 lg:px-9 text-right pt-1 sm:pt-2 md:pt-3">{tasks}/{totaltasks} tasks complete</h2>
             </div>
         </div>
     );

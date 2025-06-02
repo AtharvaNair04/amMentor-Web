@@ -5,26 +5,152 @@ import { useAuth } from "@/app/context/authcontext";
 import { CurrentTask, ReviewedTask, FeedbackProvided, UpcomingTask, 
     PlayerStats, PlayerProgress, Badges } from '@/app/(dashboard)/dashboard/dashborditems';
 import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { JSX, useEffect, useMemo, useState } from 'react';
+
+
+interface Task {
+    track_id: number;
+    task_no: number;
+    title: string;
+    description: string;
+    points: number;
+    deadline: string;
+    id: number;
+}
+
+
+interface Mentees {
+    mentor_email: string;
+    mentees:{name:string,email:string}[]
+}
+interface MenteeDetails{
+    tasks_completed:number;
+    mentee_name:string;
+    total_points:number;
+}
 
 const DashboardPage = () => {
     const { userRole, isLoggedIn } = useAuth();
+    const ismentor = userRole === 'Mentor';
     const router = useRouter();
     const [selectedMentee, setSelectedMentee] = useState("Mentee 1");
-    
+    const [menteeDetails, setMenteeDetails] = useState<MenteeDetails>({mentee_name:"temp",total_points:0,tasks_completed:0 });
+    const [tasks, setTasks] = useState<Task[]>([]);
+    const [totaltask, settotaltask] = useState(0);
+
+    const mentees = useMemo<JSX.Element[]>(() => [], []);
     useEffect(() => {
         if (!isLoggedIn) {
             router.push('/');
         }
-    }, [isLoggedIn, router]);
+        const fetchMentees = async ()=>{
+            const data = await fetch(`https://amapi.amfoss.in/mentors/${localStorage.getItem("email")}/mentees`);
+            if(!data.ok){
+                throw new Error("Failed to fetch Mentees!")
+            }
+            const response:Mentees = await data.json();
 
-    const mentees = [];
-    for(let i=0; i<5; i++){
-        mentees.push(<option key={i}>Mentee {i+1}</option>);
-    }
-    
-    const ismentor = userRole === 'Mentor';
-    
+            mentees.splice(0, mentees.length); // Clear the list before pushing new elements
+            response.mentees.map((element, index) => {
+                mentees.push(<option key={index}>{element.name}</option>);
+            });
+        }
+        const currentTrack = sessionStorage.getItem("currentTrack");
+        const track: { id: number; name: string } = currentTrack ? JSON.parse(currentTrack) : { id: 0, name: "" };
+        const fetchMenteeDetails = async () => {
+            const data = await fetch(`https://amapi.amfoss.in/leaderboard/${track.id}`);
+            if(!data.ok){
+                throw new Error("Failed to fetch Points and Rank!")
+            }
+            const response = await data.json();
+            const leaderboard:MenteeDetails[] = response['leaderboard'];
+            
+            leaderboard.forEach((element) => {
+                if (element.mentee_name === selectedMentee && ismentor) {
+                    setMenteeDetails(element);
+                }
+                if(!ismentor && element.mentee_name === localStorage.getItem("name")){
+                    setMenteeDetails(element);
+                }
+            })
+            
+        }
+        if(ismentor){
+            fetchMentees();
+        }
+        fetchMenteeDetails();
+    }, [isLoggedIn, router, mentees,ismentor,selectedMentee]);
+
+
+
+
+
+
+    useEffect(()=>{
+        const fetchTasks = async () => {
+            try {
+                let trackId;
+                
+                if (userRole === 'Mentor') {
+                    trackId = 1; 
+                } else {
+                    const sessionTrack = sessionStorage.getItem('currentTrack');
+                    
+                    if (!sessionTrack) {
+                        router.push('/track');
+                        return;
+                    }
+                    const trackData = JSON.parse(sessionTrack);
+                    trackId = trackData.id;
+                }
+                const response = await fetch(`https://amapi.amfoss.in/tracks/${trackId}/tasks`);
+                
+                if (!response.ok) {
+                    throw new Error('Failed to fetch tasks');
+                }
+                const tasksData: Task[] = await response.json();
+                setTasks(tasksData);
+                settotaltask(tasksData.length);
+                //setLoading(false);
+            } catch (error) {
+                console.error('Error fetching tasks:', error);
+                
+                if (userRole === 'Mentee') {
+                    router.push('/track');
+                } else {
+                    //setLoading(false);
+                }
+            }
+        };
+        fetchTasks();
+    },[userRole,router,isLoggedIn])
+
+
+
+    const getDummyStatus = (taskId: number, isMentor: boolean): string => {
+        const statuses = isMentor 
+            ? ["Reviewed(4)", "Submitted(2)", "In Progress(3)", "Not Started(4)"]
+            : ["Reviewed", "Submitted", "In Progress", "Not Started"];
+        
+        return statuses[taskId % statuses.length];
+    };
+
+
+    const getFormattedTasks = (): string[][] => {
+        return tasks.map((task, index) => [
+            task.id.toString(),
+            task.title,
+            getDummyStatus(index, ismentor)
+        ]);
+    };
+
+
+
+    const getUpcomingTasks = (): string[][] => getFormattedTasks().filter(task => task[2] === "Not Started");
+    const getReviewedTasks = (): string[][] => getFormattedTasks().filter(task => task[2] === "Reviewed");
+    const getReviewedMentorTasks = (): string[][] => getFormattedTasks().filter(task => task[2].includes("Reviewed"));
+    const getUpcomingMentorTasks = (): string[][] => getFormattedTasks().filter(task => task[2].includes("Not Started"));
+
     if (!isLoggedIn) {
         return null; 
     }
@@ -51,17 +177,17 @@ const DashboardPage = () => {
                     </div>
                     <div className="flex flex-col lg:flex-row justify-between mt-4 sm:mt-6 md:mt-10 gap-6 lg:gap-0">
                         <div className="flex flex-col gap-2 w-full lg:w-[46%]">
-                            <PlayerStats />
+                            <PlayerStats rank={menteeDetails.tasks_completed} points={menteeDetails.total_points} />
                             <Badges />
-                            <PlayerProgress />
+                            <PlayerProgress tasks={menteeDetails.tasks_completed} totaltasks={totaltask} />
                         </div>
                         <div className="flex flex-col gap-4 w-full lg:w-[50%]">
                             <div className="flex flex-col sm:flex-row gap-5 justify-between">
                                 <div className="w-full sm:w-1/2">
-                                    <UpcomingTask />
+                                    <UpcomingTask upcoming_tasks={getUpcomingMentorTasks()} />
                                 </div>
                                 <div className="w-full sm:w-1/2">
-                                    <ReviewedTask />
+                                    <ReviewedTask reviewed_tasks={getReviewedMentorTasks()} />
                                 </div>
                             </div>
                             <FeedbackProvided />
@@ -89,11 +215,11 @@ const DashboardPage = () => {
                     </div>
                     <div className="flex flex-col lg:flex-row justify-between mt-4 sm:mt-6 md:mt-10 gap-6 lg:gap-0">
                         <div className="flex flex-col gap-6 md:gap-12 w-full lg:w-[48%]">
-                            <PlayerStats />
-                            <ReviewedTask />
+                            <PlayerStats rank={menteeDetails.tasks_completed} points={menteeDetails.total_points} />
+                            <ReviewedTask reviewed_tasks={getReviewedTasks()} />
                         </div>
                         <div className="flex flex-col gap-2 w-full lg:w-[46%]">
-                            <UpcomingTask />
+                            <UpcomingTask upcoming_tasks={getUpcomingTasks()} />
                             <Badges />
                         </div>
                     </div>
