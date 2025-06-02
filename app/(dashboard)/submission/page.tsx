@@ -1,11 +1,10 @@
 'use client';
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import TasksViewer from "./submissionitems";
 import { useAuth } from "@/app/context/authcontext";
 import { useRouter } from 'next/navigation';
 
-// Import the review component directly
 import SubmissionReview from "./review";
 
 interface Task {
@@ -29,6 +28,79 @@ const TasksPage = () => {
     const [loading, setLoading] = useState(true);
     const [currentTrack, setCurrentTrack] = useState<{id: number; name: string} | null>(null);
     
+    const ismentor = userRole === 'Mentor';
+
+        const getDummyStatus = useCallback((taskIndex: number, totalTasks: number, isMentor: boolean): string => {
+        if (isMentor) {
+            const statuses = ["Reviewed(4)", "Submitted(2)", "In Progress(3)", "Not Started(4)"];
+            const randomIndex = Math.floor(Math.random() * statuses.length);
+            return statuses[randomIndex];
+        } else {
+            const progressPoint = Math.floor(totalTasks * 0.3); 
+            
+            if (taskIndex < progressPoint) {
+                return taskIndex % 2 === 0 ? "Reviewed" : "Submitted";
+            } else if (taskIndex === progressPoint) {
+                return "In Progress";
+            } else {
+                return "Not Started";
+            }
+        }
+    }, []);
+
+    const getFormattedTasks = useCallback((): string[][] => {
+        return tasks.map((task, index) => [
+            task.id.toString(),
+            task.title,
+            getDummyStatus(index, tasks.length, ismentor)
+        ]);
+    }, [tasks, getDummyStatus, ismentor]);
+
+    const getAllMentees = useCallback((): string[][][] => {
+        return tasks.map(() => [
+            ["Person1", "5 days", "3 files", "Reviewed"],
+            ["Person2", "7 days", "2 files", "Submitted"],
+            ["Person3", "4 days", "1 file", "In Progress"],
+            ["Person4", "6 days", "5 files", "Not Started"]
+        ]);
+    }, [tasks]);
+
+    const getSubmittedTasks = useCallback((): string[][] => 
+        getFormattedTasks().filter(task => task[2] === "Submitted"), 
+        [getFormattedTasks]
+    );
+    
+    const getReviewedTasks = useCallback((): string[][] => 
+        getFormattedTasks().filter(task => task[2] === "Reviewed"), 
+        [getFormattedTasks]
+    );
+    
+    const getReviewedMentorTasks = useCallback((): string[][] => 
+        getFormattedTasks().filter(task => task[2].includes("Reviewed")), 
+        [getFormattedTasks]
+    );
+    
+    const getSubmittedMentorTasks = useCallback((): string[][] => 
+        getFormattedTasks().filter(task => task[2].includes("Submitted")), 
+        [getFormattedTasks]
+    );
+
+    const getTasksByToggle = useCallback((toggleIndex: number): string[][] => {
+        const formattedTasks = getFormattedTasks();
+        
+        if (ismentor) {
+            if (toggleIndex === 0) return formattedTasks;
+            if (toggleIndex === 1) return getReviewedMentorTasks();
+            return getSubmittedMentorTasks();
+        } else {
+            if (toggleIndex === 0) return formattedTasks;
+            if (toggleIndex === 1) return getSubmittedTasks();
+            return getReviewedTasks();
+        }
+    }, [ismentor, getFormattedTasks, getReviewedMentorTasks, getSubmittedMentorTasks, getSubmittedTasks, getReviewedTasks]);
+
+    const [toggledTasks, setToggledTasks] = useState<string[][]>([]);
+
     useEffect(() => {
         if (!isLoggedIn) {
             router.push('/');
@@ -84,63 +156,13 @@ const TasksPage = () => {
         fetchTasks();
     }, [isLoggedIn, router, userRole]);
 
-    const ismentor = userRole === 'Mentor';
-
-    const getDummyStatus = (taskId: number, isMentor: boolean): string => {
-        const statuses = isMentor 
-            ? ["Reviewed(4)", "Submitted(2)", "In Progress(3)", "Not Started(4)"]
-            : ["Reviewed", "Submitted", "In Progress", "Not Started"];
-        
-        return statuses[taskId % statuses.length];
-    };
-
-    const getFormattedTasks = (): string[][] => {
-        return tasks.map((task, index) => [
-            task.id.toString(),
-            task.title,
-            getDummyStatus(index, ismentor)
-        ]);
-    };
-
-    const getAllMentees = (): string[][][] => {
-        return tasks.map((_, taskIndex) => [
-            ["Person1", "5 days", "3 files", "Reviewed"],
-            ["Person2", "7 days", "2 files", "Submitted"],
-            ["Person3", "4 days", "1 file", "In Progress"],
-            ["Person4", "6 days", "5 files", "Not Started"]
-        ]);
-    };
-
-    const CurrentTaskIndex: number = 0; // First task is highlighted
-
-    const getSubmittedTasks = (): string[][] => getFormattedTasks().filter(task => task[2] === "Submitted");
-    const getReviewedTasks = (): string[][] => getFormattedTasks().filter(task => task[2] === "Reviewed");
-    const getReviewedMentorTasks = (): string[][] => getFormattedTasks().filter(task => task[2].includes("Reviewed"));
-    const getSubmittedMentorTasks = (): string[][] => getFormattedTasks().filter(task => task[2].includes("Submitted"));
-
-    const getTasksByToggle = (toggleIndex: number): string[][] => {
-        const formattedTasks = getFormattedTasks();
-        
-        if (ismentor) {
-            if (toggleIndex === 0) return formattedTasks;
-            if (toggleIndex === 1) return getReviewedMentorTasks();
-            return getSubmittedMentorTasks();
-        } else {
-            if (toggleIndex === 0) return formattedTasks;
-            if (toggleIndex === 1) return getSubmittedTasks();
-            return getReviewedTasks();
-        }
-    };
-
-    const [toggledTasks, setToggledTasks] = useState<string[][]>([]);
-
     useEffect(() => {
         if (tasks.length > 0) {
             setToggledTasks(getTasksByToggle(toggles.findIndex(toggle => toggle === true) || 0));
         }
-    }, [tasks, userRole, toggles]);
+    }, [tasks, userRole, toggles, getTasksByToggle]);
 
-    const getFilteredMentees = (): string[][][] => {
+    const getFilteredMentees = useCallback((): string[][][] => {
         if (!ismentor) return [];
         const allMentees = getAllMentees();
         return toggledTasks.map(task => {
@@ -148,7 +170,9 @@ const TasksPage = () => {
             const originalTaskIndex = tasks.findIndex(t => t.id.toString() === taskId);
             return originalTaskIndex >= 0 ? allMentees[originalTaskIndex] : [];
         });
-    };
+    }, [ismentor, getAllMentees, toggledTasks, tasks]);
+
+    const CurrentTaskIndex: number = 0; 
 
     function toggleState(index: number): void {
         const newToggles: boolean[] = [false, false, false];
@@ -157,25 +181,21 @@ const TasksPage = () => {
         setToggledTasks(getTasksByToggle(index));
     }
     
-    // Function to handle task click (for mentee)
     const handleTaskClick = (taskId: string) => {
         setSelectedTaskId(taskId);
         setShowReview(true);
     };
     
-    // Function to handle mentee click (for mentor)
     const handleMenteeClick = (taskId: string, menteeId: string) => {
         setSelectedTaskId(taskId);
         setSelectedMenteeId(menteeId);
         setShowReview(true);
     };
     
-    // Function to close the review component
     const handleCloseReview = () => {
         setShowReview(false);
     };
 
-    // Function to change track (for mentees)
     const handleChangeTrack = () => {
         sessionStorage.removeItem('currentTrack');
         router.push('/track');
@@ -224,7 +244,6 @@ const TasksPage = () => {
                 />
             ) : (
                 <>
-                    {/* Show current track info for mentees */}
                     {userRole === 'Mentee' && currentTrack && (
                         <div className="text-center mb-4">
                             <div className="text-yellow-400 text-lg">
