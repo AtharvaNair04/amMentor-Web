@@ -9,7 +9,7 @@ export interface LeaderboardEntry {
 interface LeaderboardProps {
   title: string;
   entries: LeaderboardEntry[];
-}
+  }
   export async function fetchPlayerdata(trackid: number) {
     const data = await fetch("https://amapi.amfoss.in/leaderboard/" + trackid);
     const response = await data.json();

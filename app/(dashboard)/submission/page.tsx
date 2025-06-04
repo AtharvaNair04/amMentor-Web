@@ -102,7 +102,7 @@ const TasksPage = () => {
     };
 
     const getAllMentees = (): string[][][] => {
-        return tasks.map((_, taskIndex) => [
+        return tasks.map(() => [
             ["Person1", "5 days", "3 files", "Reviewed"],
             ["Person2", "7 days", "2 files", "Submitted"],
             ["Person3", "4 days", "1 file", "In Progress"],
