@@ -1,6 +1,7 @@
 'use client'
 import { useState } from "react";
-import { User,Clock, File } from "lucide-react";
+import MenteeCard from "@/app/components/layout/MenteeCard";
+
 interface TasksViewerProps {
     isMentor: boolean; 
     tasks: string[][]; 
@@ -38,12 +39,13 @@ const TasksViewer = ({ isMentor, tasks, highted_task, mentees = [], onTaskClick,
                         className={`bg-deeper-grey rounded-xl transition-transform hover:scale-[103%] font-bold ${highted_task == i && !isMentor && "bg-primary-yellow"}`}
                     >
                         <div
-                            className={`flex flex-wrap justify-evenly p-3 sm:p-4 ${highted_task == i && !isMentor && "text-black"} text-sm sm:text-base`}
+                            className={`grid grid-cols-3 gap-2 sm:gap-4 p-3 sm:p-4 items-center ${highted_task == i && !isMentor && "text-black"} text-sm sm:text-base`}
                             onClick={() => toggleExpand(i)}
                         >
                             {task.map((item, j) => (
                                 <h1 
-                                    className={`text-xs sm:text-sm md:text-lg lg:text-2xl 
+                                    className={`text-xs sm:text-sm md:text-lg lg:text-2xl
+                                        ${j === 0 ? "text-left pl-14" : j === 1 ? "text-center" : "text-right pr-14"}
                                         ${item.includes("Reviewed") && "text-green"} 
                                         ${item.includes("Submitted") && "text-primary-yellow"} 
                                         ${item.includes("Pending") && "text-primary-yellow"}`}
@@ -56,38 +58,11 @@ const TasksViewer = ({ isMentor, tasks, highted_task, mentees = [], onTaskClick,
                         {mentees.length > 0 && mentees[i] && mentees[i].length > 0 && expandedTaskIndex === i && (
                             <div className="flex flex-wrap justify-evenly p-3 sm:p-4">
                                 {mentees[i].map((mentee, j) => (
-                                    <div 
-                                        key={j} 
-                                        className={`text-xs sm:text-sm md:text-lg px-3 sm:px-5 border-2 bg-deep-grey border-deep-grey sm:py-4 rounded-lg cursor-pointer`}
+                                    <MenteeCard
+                                        key={j}
+                                        mentee={mentee}
                                         onClick={() => handleMenteeClick(i, j)}
-                                    >
-                                        <div className="flex gap-3  sm:gap-5">
-                                            <User size={36} />
-                                            <div>
-                                                <div className="flex justify-between mb-2 gap-4">
-                                                    <h1 className="font-semibold">{mentee[0]}</h1>
-                                                </div>
-                                                <div className="flex items-center gap-3 mb-4">
-                                                    <div className="flex items-center gap-1">
-                                                        <Clock size={20} />
-                                                        <h1 className="text-sm">{mentee[1]}</h1>
-                                                    </div>
-                                                    <div className="flex items-center gap-1">
-                                                        <File size={20} />
-                                                        <h1 className="text-sm">{mentee[2]}</h1>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <h2 
-                                                className={`text-center rounded-full px-3 py-1 
-                                                ${mentee[3] == "Submitted" && "bg-primary-yellow text-black"} 
-                                                ${mentee[3].includes("Reviewed") && "bg-[#40991f] text-white"} 
-                                                ${mentee[3].includes("Not Submitted") && "bg-deeper-grey"}`}
-                                            >
-                                                {mentee[3]}
-                                            </h2>
-                                    </div>
+                                    />
                                 ))}
                             </div>
                         )}
