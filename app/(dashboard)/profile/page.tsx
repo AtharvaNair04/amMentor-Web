@@ -42,7 +42,7 @@ const ProfilePage = () => {
     };
 
     fetchUser();
-  }, []);
+  }, [logout, router]);
 
   const handleLogout = () => {
     logout();
