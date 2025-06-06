@@ -14,7 +14,6 @@ const MentorSection = ({
   mentorNotes,
   setMentorNotes,
   taskStatus,
-  reviewStatus,
   setReviewStatus
 }: MentorSectionProps) => {
   return (

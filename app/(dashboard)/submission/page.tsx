@@ -1,11 +1,11 @@
 'use client';
 
 import { useState, useEffect, useCallback } from "react";
-import TasksViewer from "./submissionitems";
+import TasksViewer from "./(tasks)/submissionitems";
 import { useAuth } from "@/app/context/authcontext";
 import { useRouter } from 'next/navigation';
 
-import SubmissionReview from "./review";
+import SubmissionReview from "./(review)/review";
 
 interface Task {
     track_id: number;
@@ -138,7 +138,6 @@ const TasksPage = () => {
                 if (!response.ok) {
                     throw new Error('Failed to fetch tasks');
                 }
-
                 const tasksData: Task[] = await response.json();
                 setTasks(tasksData);
                 setLoading(false);

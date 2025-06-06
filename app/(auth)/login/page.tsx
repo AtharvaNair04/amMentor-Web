@@ -66,6 +66,7 @@ export default function LoginPage() {
       }
 
       localStorage.setItem('email', user.email);
+      localStorage.setItem('name',user.name)
       const capitalizedRole = role.charAt(0).toUpperCase() + role.slice(1) as 'Mentee' | 'Mentor';
       
       localStorage.setItem('userRole', capitalizedRole);
