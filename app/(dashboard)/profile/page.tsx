@@ -64,9 +64,6 @@ const ProfilePage = () => {
                 {user.name.charAt(0)}
               </div>
             </div>
-            <button className="mt-4 px-4 py-1 border border-gray-400 text-yellow-400 rounded-md text-sm hover:bg-yellow-400 hover:text-black transition">
-              Customise Profile
-            </button>
           </div>
           <div className="flex flex-col">
             <h1 className="text-2xl font-bold">{user.name}</h1>
