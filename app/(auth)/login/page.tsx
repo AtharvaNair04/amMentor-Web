@@ -21,12 +21,7 @@ export default function LoginPage() {
   useEffect(() => {
     const emailInStorage = localStorage.getItem('email');
     if (isLoggedIn && emailInStorage) {
-      const userRole = localStorage.getItem('userRole');
-      if (userRole === 'Mentor') {
-        router.push('/dashboard');
-      } else {
-        router.push('/track');
-      }
+      router.push('/track');
     } else {
       setLoading(false);
     }

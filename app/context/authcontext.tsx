@@ -25,7 +25,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     const storedRole = localStorage.getItem('userRole') as UserRole;
     const loggedInStatus = localStorage.getItem('isLoggedIn') === 'true';
-    
     if (storedRole) {
       setUserRole(storedRole);
       setIsLoggedIn(loggedInStatus);
@@ -45,7 +44,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     localStorage.removeItem('userRole');
     localStorage.removeItem('isLoggedIn');
   };
-
   return (
     <AuthContext.Provider value={{ userRole, isLoggedIn, login, logout }}>
       {children}

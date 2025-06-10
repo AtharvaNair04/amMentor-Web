@@ -106,9 +106,8 @@ const TasksPage = () => {
             router.push('/');
             return;
         }
-
-        if (userRole === 'Mentee') {
-            const sessionTrack = sessionStorage.getItem('currentTrack');
+        const sessionTrack = sessionStorage.getItem('currentTrack');
+        if (sessionTrack) {
             if (!sessionTrack) {
                 router.push('/track');
                 return;
@@ -243,7 +242,7 @@ const TasksPage = () => {
                 />
             ) : (
                 <>
-                    {userRole === 'Mentee' && currentTrack && (
+                    {currentTrack && (
                         <div className="text-center mb-4">
                             <div className="text-yellow-400 text-lg">
                                 Current Track: {currentTrack.name}

@@ -13,25 +13,15 @@ export default function TrackSelectionPage() {
   const router = useRouter();
 
   useEffect(() => {
-    if (!isLoggedIn) {
+    if (localStorage.getItem('isLoggedIn') != 'true') {
       router.push('/');
       return;
     }
-    if (userRole === 'Mentor') {
-      router.push('/dashboard');
-      return;
-    }
-    if (userRole !== 'Mentee') {
-      router.push('/');
-      return;
-    }
-
     async function fetchdata() {
       try {
         const icons_set = {1:Brain,2:Code,3:Smartphone,4:Monitor,5:Award};
         const data = await fetch("https://amapi.amfoss.in/tracks/");    
         const response: { id: number; title: string }[] = await data.json();
-
         const updatedTracks = response.map((element) => ({
           id: element.id,
           name: element.title,
@@ -46,10 +36,10 @@ export default function TrackSelectionPage() {
     }
     fetchdata();
   }, [router, userRole, isLoggedIn]);
+  console.log(isLoggedIn);
 
   const handleTrackSelect = (trackId: number) => {
     setSelectedTrack(trackId);
-    
     const selectedTrackObj = tracks.find(track => track.id === trackId);
     if (selectedTrackObj) {
       sessionStorage.setItem('currentTrack', JSON.stringify({
