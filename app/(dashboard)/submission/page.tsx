@@ -240,6 +240,7 @@ const TasksPage = () => {
                     taskId={selectedTaskId}
                     menteeId={selectedMenteeId}
                     onClose={handleCloseReview}
+                    trackId={currentTrack?.id}
                 />
             ) : (
                 <>

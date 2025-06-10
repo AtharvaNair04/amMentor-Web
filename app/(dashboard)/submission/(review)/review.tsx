@@ -9,9 +9,10 @@ interface SubmissionReviewProps {
   taskId?: string | null;
   menteeId?: string | null;
   onClose: () => void;
+  trackId?: string | number | null;
 }
 
-const SubmissionReview = ({ isMentor, taskId, menteeId, onClose }: SubmissionReviewProps) => {
+const SubmissionReview = ({ isMentor, taskId, menteeId, onClose, trackId }: SubmissionReviewProps) => {
   const [submissionText, setSubmissionText] = useState('');
   const [mentorNotes, setMentorNotes] = useState('Contrary to popular belief, Lorem Ipsum is not simply random text. It has roots in a piece of classical Latin literature from 45 BC, making it over 2000 years old. Richard McClintock, a Latin professor at Hampden-Sydney College in Virginia,');
   const [reviewStatus, setReviewStatus] = useState('pending');
@@ -52,13 +53,14 @@ const SubmissionReview = ({ isMentor, taskId, menteeId, onClose }: SubmissionRev
         <div className="flex flex-col md:flex-row px-4 md:px-10">
           <TaskDetails 
             isMentor={isMentor}
-            taskId={taskId}
+            taskId={taskId ?? undefined}
             menteeId={menteeId}
             taskStatus={taskStatus}
             submissionText={submissionText}
             setSubmissionText={setSubmissionText}
             canEdit={canEdit}
             isAlreadySubmitted={isAlreadySubmitted}
+            trackId={trackId ?? undefined}
           />
           
           <MentorSection 
@@ -76,3 +78,6 @@ const SubmissionReview = ({ isMentor, taskId, menteeId, onClose }: SubmissionRev
 };
 
 export default SubmissionReview;
+
+
+

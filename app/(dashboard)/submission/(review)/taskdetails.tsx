@@ -1,14 +1,21 @@
-import React from 'react';
+import React, {useState, useEffect} from 'react';
 
 interface TaskDetailsProps {
   isMentor: boolean;
-  taskId?: string | null;
+  taskId?: string;
   menteeId?: string | null;
   taskStatus: string;
   submissionText: string;
   setSubmissionText: (text: string) => void;
   canEdit: boolean;
   isAlreadySubmitted: boolean;
+  trackId?: string | number;
+}
+
+interface Task {
+  id:string;
+  title:string;
+  description:string;
 }
 
 const TaskDetails = ({
@@ -19,27 +26,55 @@ const TaskDetails = ({
   submissionText,
   setSubmissionText,
   canEdit,
-  isAlreadySubmitted
+  isAlreadySubmitted,
+  trackId,
 }: TaskDetailsProps) => {
+  const [task, setTask] = useState<Task | null>(null);
+  const [loading, setLoading] = useState(true);
+
+   useEffect(() => {
+    const fetchTask = async () => {
+      if (/*!trackId ||*/ !taskId) {
+        setLoading(false);
+        return;
+      }
+      try {
+        setLoading(true);
+        const res = await fetch(`https://amapi.amfoss.in/tracks/1/tasks`);
+        const tasks = await res.json();
+        const foundTask = tasks.find((t: any) => String(t.id) === String(taskId));
+        setTask(foundTask || null);
+      } catch (e) {
+        setTask(null);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchTask();
+  }, [trackId, taskId]);
+
   const totalDays = 30;
   const daysLeft = 5;
   const progressPercentage = ((totalDays - daysLeft) / totalDays) * 100;
 
+  if (loading) {
+    return <div className="text-white">Loading task details...</div>;
+  }
+
   return (
-    <div className="w-full md:w-2/3 md:pr-8 mb-6 md:mb-0">
+     <div className="w-full md:w-2/3 md:pr-8 mb-6 md:mb-0">
       <div className="mb-4 md:mb-6 px-4 md:px-0 py-2 md:py-4">
         <div className="flex-1 max-w-full md:max-w-[70%]">
-          <h2 className="text-xl md:text-2xl font-bold text-white-text">TASK NAME</h2>
+          <h2 className="text-xl md:text-2xl font-bold text-white-text">
+            {task?.title || 'TASK NAME'}
+          </h2>
           <p className="text-gray-400">TASK - {taskId || 'XX'}</p>
           {isMentor && menteeId && (
             <p className="text-primary-yellow font-semibold mt-2">Mentee: {menteeId}</p>
           )}
           <p className="text-xs md:text-sm text-gray-300">
-            TASK DETAILS Lorem Ipsum is simply dummy text of the printing and typesetting
-            industry. Lorem Ipsum has been the industries standard dummy text ever since the
-            1500s, when an unknown printer took a galley
+            {task?.description || 'TASK DETAILS ...'}
           </p>
-          
           <div className="mt-3">
             <span className={`inline-block px-3 py-1 rounded-full text-xs font-semibold ${
               taskStatus === 'Reviewed' ? 'bg-green-600 text-white' :
@@ -50,7 +85,6 @@ const TaskDetails = ({
               Status: {taskStatus}
             </span>
           </div>
-          
           <div className="border-t border-white mb-2 md:mb-4 mt-4"></div>
         </div>
       </div>
