@@ -5,7 +5,7 @@ export interface LeaderboardEntry {
 }
 
 export async function fetchPlayerdata(trackid: number) {
-    const data = await fetch("https://amapi.amfoss.in/leaderboard/" + trackid);
+    const data = await fetch("https://amapi.amfoss.in/leaderboard/" + 1);
     const response = await data.json();
     const players: LeaderboardEntry[] = response["leaderboard"].map((element: { mentee_name: string; total_points: number }, index: number) => ({
         position: index + 1,
