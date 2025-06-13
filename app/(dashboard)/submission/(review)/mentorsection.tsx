@@ -7,6 +7,7 @@ interface MentorSectionProps {
   taskStatus: string;
   reviewStatus: string;
   setReviewStatus: (status: string) => void;
+  setTaskStatus: (status: string) => void;
 }
 
 const MentorSection = ({
@@ -14,8 +15,31 @@ const MentorSection = ({
   mentorNotes,
   setMentorNotes,
   taskStatus,
-  setReviewStatus
+  setReviewStatus,
+  setTaskStatus,
 }: MentorSectionProps) => {
+  const handleReviewAction = (action: string) => {
+    setReviewStatus(action);
+
+    let message = '';
+    let newTaskStatus = taskStatus;
+
+    switch (action) {
+      case 'approved':
+        message = 'Task approved successfully!';
+        break;
+      case 'rejected':
+        message = 'Task rejected. Please provide feedback in mentor notes.';
+        break;
+        case 'paused':
+        message = 'Task paused. You can resume it later.';
+        break;
+    }
+
+    setTaskStatus(newTaskStatus);
+    alert(message);
+  };
+
   return (
     <div className="w-full md:w-1/3 border-t md:border-t-0 md:border-l border-gray-700 pt-6 md:pt-0 md:pl-8">
       <div className="mb-6">
@@ -60,8 +84,8 @@ const MentorSection = ({
         {isMentor && (taskStatus === 'Submitted') && (
           <div className="flex justify-between gap-2">
             <button 
-              onClick={() => setReviewStatus('rejected')}
-              className="flex-1 bg-red-600 hover:bg-red-700 text-white py-2 px-4 rounded-md font-medium flex items-center justify-center"
+              onClick={() => handleReviewAction('rejected')}
+              className="flex-1 bg-red hover:bg-red-700 text-white py-2 px-4 rounded-md font-medium flex items-center justify-center"
             >
               <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -69,8 +93,8 @@ const MentorSection = ({
               Reject
             </button>
             <button 
-              onClick={() => setReviewStatus('approved')}
-              className="flex-1 bg-green-600 hover:bg-green-700 text-white py-2 px-4 rounded-md font-medium flex items-center justify-center"
+              onClick={() => handleReviewAction('approved')}
+              className="flex-1 bg-dark-green hover:bg-green-700 text-white py-2 px-4 rounded-md font-medium flex items-center justify-center"
             >
               <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
@@ -78,7 +102,7 @@ const MentorSection = ({
               Approve
             </button>
             <button 
-              onClick={() => setReviewStatus('paused')}
+              onClick={() => handleReviewAction('paused')}
               className="flex-1 bg-orange-500 hover:bg-orange-600 text-white py-2 px-4 rounded-md font-medium"
             >
               Pause

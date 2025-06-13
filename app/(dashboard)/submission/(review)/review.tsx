@@ -13,10 +13,6 @@ interface SubmissionReviewProps {
 }
 
 const SubmissionReview = ({ isMentor, taskId, menteeId, onClose, trackId }: SubmissionReviewProps) => {
-  const [submissionText, setSubmissionText] = useState('');
-  const [mentorNotes, setMentorNotes] = useState('Contrary to popular belief, Lorem Ipsum is not simply random text. It has roots in a piece of classical Latin literature from 45 BC, making it over 2000 years old. Richard McClintock, a Latin professor at Hampden-Sydney College in Virginia,');
-  const [reviewStatus, setReviewStatus] = useState('pending');
-  
   // Mock data for task statuses
   const mockTaskStatuses = {
     '00': 'Reviewed',
@@ -25,9 +21,15 @@ const SubmissionReview = ({ isMentor, taskId, menteeId, onClose, trackId }: Subm
     '03': 'In Progress',
     '04': 'Not Started'
   };
-  
+
+  const [submissionText, setSubmissionText] = useState('');
+  const [mentorNotes, setMentorNotes] = useState('Contrary to popular belief, Lorem Ipsum is not simply random text. It has roots in a piece of classical Latin literature from 45 BC, making it over 2000 years old. Richard McClintock, a Latin professor at Hampden-Sydney College in Virginia,');
+  const [reviewStatus, setReviewStatus] = useState('In Progress');
+  const [taskStatus, setTaskStatus] = useState(
+    mockTaskStatuses[taskId as keyof typeof mockTaskStatuses] || 'Not Started'
+  );
+
   console.log('Current review status:', reviewStatus);
-  const taskStatus = mockTaskStatuses[taskId as keyof typeof mockTaskStatuses] || 'Not Started';
   
   useEffect(() => {
     if (taskStatus === 'Submitted' || taskStatus === 'Reviewed') {
@@ -70,6 +72,7 @@ const SubmissionReview = ({ isMentor, taskId, menteeId, onClose, trackId }: Subm
             taskStatus={taskStatus}
             reviewStatus={reviewStatus}
             setReviewStatus={setReviewStatus}
+            setTaskStatus={setTaskStatus}
           />
         </div>
       </div>

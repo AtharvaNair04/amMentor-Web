@@ -31,6 +31,7 @@ const TaskDetails = ({
 }: TaskDetailsProps) => {
   const [task, setTask] = useState<Task | null>(null);
   const [loading, setLoading] = useState(true);
+  const [hasStarted, setHasStarted] = useState(false);
 
    useEffect(() => {
     const fetchTask = async () => {
@@ -84,6 +85,15 @@ const TaskDetails = ({
             }`}>
               Status: {taskStatus}
             </span>
+            {!isMentor && !hasStarted &&  taskStatus === 'In Progress' &&(
+              <button
+                onClick={() => setHasStarted(true)}
+                className="ml-4 px-4 py-1 bg-primary-yellow text-dark-bg rounded-full text-xs font-semibold hover:bg-yellow-400 transition-colors"
+              >
+                START TASK
+              </button>
+            )}
+            
           </div>
           <div className="border-t border-white mb-2 md:mb-4 mt-4"></div>
         </div>
@@ -141,7 +151,7 @@ const TaskDetails = ({
         
         {!isMentor ? (
           <>
-            {canEdit ? (
+            {canEdit || hasStarted ? (
               <>
                 <textarea
                   value={submissionText}
