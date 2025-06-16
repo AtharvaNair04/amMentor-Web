@@ -10,12 +10,24 @@ interface TaskDetailsProps {
   canEdit: boolean;
   isAlreadySubmitted: boolean;
   trackId?: string | number;
+  onSubmitTask: () => void;
 }
 
 interface Task {
-  id:string;
-  title:string;
-  description:string;
+  id: string;
+  title: string;
+  description: string;
+}
+
+// Define proper interface for task API response
+interface TaskApiResponse {
+  id: number;
+  title: string;
+  description: string;
+  track_id: number;
+  task_no: number;
+  points: number;
+  deadline: string;
 }
 
 const TaskDetails = ({
@@ -28,6 +40,7 @@ const TaskDetails = ({
   canEdit,
   isAlreadySubmitted,
   trackId,
+  onSubmitTask,
 }: TaskDetailsProps) => {
   const [task, setTask] = useState<Task | null>(null);
   const [loading, setLoading] = useState(true);
@@ -42,10 +55,19 @@ const TaskDetails = ({
       try {
         setLoading(true);
         const res = await fetch(`https://amapi.amfoss.in/tracks/1/tasks`);
-        const tasks = await res.json();
-        const foundTask = tasks.find((t: any) => String(t.id) === String(taskId));
-        setTask(foundTask || null);
-      } catch (e) {
+        const tasks: TaskApiResponse[] = await res.json();
+        const foundTask = tasks.find((t: TaskApiResponse) => String(t.id) === String(taskId));
+        if (foundTask) {
+          setTask({
+            id: foundTask.id.toString(),
+            title: foundTask.title,
+            description: foundTask.description,
+          });
+        } else {
+          setTask(null);
+        }
+      } catch (error) {
+        console.error('Error fetching task:', error);
         setTask(null);
       } finally {
         setLoading(false);
@@ -156,7 +178,7 @@ const TaskDetails = ({
                 <textarea
                   value={submissionText}
                   onChange={(e) => setSubmissionText(e.target.value)}
-                  placeholder="Submit your work link or description here..."
+                  placeholder="Submit your work link or description here... (e.g. https://github.com/yourname/task-solution)"
                   className="w-full bg-dark-grey rounded-md p-3 md:p-4 min-h-[100px] md:min-h-[120px] text-sm md:text-base text-white-text mb-4 md:mb-6 resize-none border-none outline-none placeholder-gray-500"
                 />
                 
@@ -167,8 +189,7 @@ const TaskDetails = ({
                     onClick={(e) => {
                       e.preventDefault();
                       if (submissionText.trim()) {
-                        console.log('Submitting work for task:', taskId);
-                        alert('Work submitted successfully!');
+                        onSubmitTask();
                       }
                     }}
                     className={`px-6 md:px-10 py-2 rounded-full text-sm md:text-md font-bold shadow-md ${
@@ -177,14 +198,33 @@ const TaskDetails = ({
                         : "bg-primary-yellow text-dark-bg hover:shadow-xl transition-shadow"
                     }`}
                   >
-                    SUBMIT
+                    SUBMIT TASK
                   </button>
                 </div>
               </>
             ) : (
               <>
                 <div className="bg-dark-grey rounded-md p-3 md:p-4 min-h-[100px] md:min-h-[120px] text-sm md:text-base text-white-text mb-4 md:mb-6 border border-gray-600">
-                  {submissionText || 'No submission provided'}
+                  {submissionText ? (
+                    // Check if it looks like a URL and make it clickable
+                    submissionText.match(/https?:\/\/[^\s]+/) ? (
+                      <div>
+                        {submissionText.split(/(https?:\/\/[^\s]+)/).map((part, index) => 
+                          part.match(/https?:\/\/[^\s]+/) ? (
+                            <a 
+                              key={index}
+                              href={part}
+                              target="_blank" 
+                              rel="noopener noreferrer"
+                              className="text-blue-400 hover:text-blue-300 underline break-all"
+                            >
+                              {part}
+                            </a>
+                          ) : part
+                        )}
+                      </div>
+                    ) : submissionText
+                  ) : 'No submission provided'}
                 </div>
                 
                 <div className="flex justify-center">
@@ -211,8 +251,29 @@ const TaskDetails = ({
             )}
           </>
         ) : (
-          <div className="bg-dark-grey rounded-md p-3 md:p-4 min-h-[100px] md:min-h-[120px] text-sm md:text-base text-white-text mb-4 md:mb-6">
-            {submissionText || 'No submission provided'}
+          <div>
+            <div className="bg-dark-grey rounded-md p-3 md:p-4 min-h-[100px] md:min-h-[120px] text-sm md:text-base text-white-text">
+              {submissionText ? (
+                // Check if it looks like a URL and make it clickable for mentors too
+                submissionText.match(/https?:\/\/[^\s]+/) ? (
+                  <div>
+                    {submissionText.split(/(https?:\/\/[^\s]+)/).map((part, index) => 
+                      part.match(/https?:\/\/[^\s]+/) ? (
+                        <a 
+                          key={index}
+                          href={part}
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className="text-blue-400 hover:text-blue-300 underline break-all"
+                        >
+                          {part}
+                        </a>
+                      ) : part
+                    )}
+                  </div>
+                ) : submissionText
+              ) : 'No submission provided'}
+            </div>
           </div>
         )}
       </div>

@@ -17,6 +17,16 @@ interface Task {
     id: number;
 }
 
+interface Submission {
+    task_id: number;
+    status: string;
+}
+
+interface Mentee {
+    name: string;
+    email: string;
+}
+
 const TasksPage = () => {
     const { userRole, isLoggedIn } = useAuth();
     const router = useRouter();
@@ -26,78 +36,123 @@ const TasksPage = () => {
     const [selectedMenteeId, setSelectedMenteeId] = useState<string | null>(null);
     const [tasks, setTasks] = useState<Task[]>([]);
     const [loading, setLoading] = useState(true);
+    const [mentees, setMentees] = useState<Mentee[]>([]);
+    const [menteeSubmissions, setMenteeSubmissions] = useState<Record<string, Record<number, string>>>({});
+    const [mySubmissions, setMySubmissions] = useState<Record<number, string>>({}); // Added for mentee's own submissions
     const [currentTrack, setCurrentTrack] = useState<{id: number; name: string} | null>(null);
     
+    // Get user email from localStorage/sessionStorage
+    const getUserEmail = (): string | null => {
+        // Based on your profile page, email is stored directly in localStorage
+        const email = localStorage.getItem('email');
+        console.log('Found email in localStorage:', email);
+        return email;
+    };
+
     const ismentor = userRole === 'Mentor';
 
-        const getDummyStatus = useCallback((taskIndex: number, totalTasks: number, isMentor: boolean): string => {
-        if (isMentor) {
-            const statuses = ["Reviewed(4)", "Submitted(2)", "In Progress(3)", "Not Started(4)"];
-            const randomIndex = Math.floor(Math.random() * statuses.length);
-            return statuses[randomIndex];
+    const fetchTasks = useCallback(async (): Promise<Task[]> => {
+        let trackId;
+
+        if (userRole === 'Mentor') {
+            trackId = 1;
         } else {
-            const progressPoint = Math.floor(totalTasks * 0.3); 
-            
-            if (taskIndex < progressPoint) {
-                return taskIndex % 2 === 0 ? "Reviewed" : "Submitted";
-            } else if (taskIndex === progressPoint) {
-                return "In Progress";
-            } else {
-                return "Not Started";
+            const sessionTrack = sessionStorage.getItem('currentTrack');
+            if (!sessionTrack) {
+                router.push('/track');
+                return [];
+            }
+            const trackData = JSON.parse(sessionTrack);
+            trackId = trackData.id;
+            setCurrentTrack(trackData);
+        }
+
+        const response = await fetch(`https://amapi.amfoss.in/tracks/${trackId}/tasks`);
+        if (!response.ok) throw new Error('Failed to fetch tasks');
+        const data = await response.json();
+        setTasks(data);
+        return data;
+    }, [userRole, router]);
+
+    const fetchMentees = useCallback(async (): Promise<Mentee[]> => {
+        const mentorEmail = 'atharvanair04@gmail.com';
+        const res = await fetch(`https://amapi.amfoss.in/mentors/${encodeURIComponent(mentorEmail)}/mentees`);
+        const data = await res.json();
+        setMentees(data.mentees);
+        return data.mentees;
+    }, []);
+
+    const fetchMenteeSubmissions = useCallback(async (menteesList: Mentee[], tasksList: Task[]) => {
+        const results: Record<string, Record<number, string>> = {};
+        for (const mentee of menteesList) {
+            results[mentee.name] = {};
+            for (const task of tasksList) {
+                const res = await fetch(`https://amapi.amfoss.in/submissions/?email=${encodeURIComponent(mentee.email)}&track_id=${task.track_id}`);
+                if (res.ok) {
+                    const submissions: Submission[] = await res.json();
+                    const taskSubmission = submissions.find((s: Submission) => s.task_id === task.id);
+                    results[mentee.name][task.id] = taskSubmission?.status || 'Not Started';
+                }
             }
         }
+        setMenteeSubmissions(results);
+    }, []);
+
+    // New function to fetch mentee's own submissions
+    const fetchMySubmissions = useCallback(async (tasksList: Task[], trackId: number) => {
+        const userEmail = getUserEmail();
+        if (!userEmail) {
+            console.log('No user email found');
+            return;
+        }
+        
+        console.log('Fetching submissions for email:', userEmail, 'trackId:', trackId);
+        
+        const results: Record<number, string> = {};
+        for (const task of tasksList) {
+            try {
+                const res = await fetch(`https://amapi.amfoss.in/submissions/?email=${encodeURIComponent(userEmail)}&track_id=${trackId}`);
+                console.log(`Fetching submissions for task ${task.id}, response status:`, res.status);
+                
+                if (res.ok) {
+                    const submissions: Submission[] = await res.json();
+                    console.log(`Submissions for task ${task.id}:`, submissions);
+                    const taskSubmission = submissions.find((s: Submission) => s.task_id === task.id);
+                    results[task.id] = taskSubmission?.status || 'Not Started';
+                } else {
+                    results[task.id] = 'Not Started';
+                }
+            } catch (error) {
+                console.error(`Error fetching submission for task ${task.id}:`, error);
+                results[task.id] = 'Not Started';
+            }
+        }
+        console.log('Final results:', results);
+        setMySubmissions(results);
     }, []);
 
     const getFormattedTasks = useCallback((): string[][] => {
-        return tasks.map((task, index) => [
-            task.id.toString(),
-            task.title,
-            getDummyStatus(index, tasks.length, ismentor)
-        ]);
-    }, [tasks, getDummyStatus, ismentor]);
-
-    const getAllMentees = useCallback((): string[][][] => {
-        return tasks.map(() => [
-            ["Person1", "5 days", "3 files", "Reviewed"],
-            ["Person2", "7 days", "2 files", "Submitted"],
-            ["Person3", "4 days", "1 file", "In Progress"],
-            ["Person4", "6 days", "5 files", "Not Started"]
-        ]);
-    }, [tasks]);
-
-    const getSubmittedTasks = useCallback((): string[][] => 
-        getFormattedTasks().filter(task => task[2] === "Submitted"), 
-        [getFormattedTasks]
-    );
-    
-    const getReviewedTasks = useCallback((): string[][] => 
-        getFormattedTasks().filter(task => task[2] === "Reviewed"), 
-        [getFormattedTasks]
-    );
-    
-    const getReviewedMentorTasks = useCallback((): string[][] => 
-        getFormattedTasks().filter(task => task[2].includes("Reviewed")), 
-        [getFormattedTasks]
-    );
-    
-    const getSubmittedMentorTasks = useCallback((): string[][] => 
-        getFormattedTasks().filter(task => task[2].includes("Submitted")), 
-        [getFormattedTasks]
-    );
-
-    const getTasksByToggle = useCallback((toggleIndex: number): string[][] => {
-        const formattedTasks = getFormattedTasks();
-        
-        if (ismentor) {
-            if (toggleIndex === 0) return formattedTasks;
-            if (toggleIndex === 1) return getReviewedMentorTasks();
-            return getSubmittedMentorTasks();
-        } else {
-            if (toggleIndex === 0) return formattedTasks;
-            if (toggleIndex === 1) return getSubmittedTasks();
-            return getReviewedTasks();
-        }
-    }, [ismentor, getFormattedTasks, getReviewedMentorTasks, getSubmittedMentorTasks, getSubmittedTasks, getReviewedTasks]);
+        return tasks.map((task) => {
+            if (ismentor && mentees.length > 0 && Object.keys(menteeSubmissions).length > 0) {
+                // Mentor view - show mentee progress summary
+                const counts: Record<string, number> = {};
+                for (const mentee of mentees) {
+                    const status = menteeSubmissions[mentee.name]?.[task.id] || 'Not Started';
+                    counts[status] = (counts[status] || 0) + 1;
+                }
+                const statusSummary = Object.entries(counts)
+                    .map(([status, count]) => `${status} (${count})`)
+                    .join(', ');
+                return [task.id.toString(), task.title, statusSummary];
+            } else if (!ismentor && Object.keys(mySubmissions).length > 0) {
+                // Mentee view - show own progress
+                const status = mySubmissions[task.id] || 'Not Started';
+                return [task.id.toString(), task.title, status];
+            } else {
+                return [task.id.toString(), task.title, ""];
+            }
+        });
+    }, [tasks, ismentor, mentees, menteeSubmissions, mySubmissions]);
 
     const [toggledTasks, setToggledTasks] = useState<string[][]>([]);
 
@@ -107,69 +162,55 @@ const TasksPage = () => {
             return;
         }
 
-        if (userRole === 'Mentee') {
-            const sessionTrack = sessionStorage.getItem('currentTrack');
-            if (!sessionTrack) {
-                router.push('/track');
-                return;
-            }
-            setCurrentTrack(JSON.parse(sessionTrack));
-        }
-
-        const fetchTasks = async () => {
+        const init = async () => {
             try {
-                let trackId;
-                
-                if (userRole === 'Mentor') {
-                    trackId = 1; 
-                } else {
-                    const sessionTrack = sessionStorage.getItem('currentTrack');
-                    
-                    if (!sessionTrack) {
-                        router.push('/track');
-                        return;
-                    }
-                    const trackData = JSON.parse(sessionTrack);
-                    trackId = trackData.id;
+                const fetchedTasks = await fetchTasks();
+                if (fetchedTasks.length === 0) {
+                    setLoading(false);
+                    return;
                 }
 
-                const response = await fetch(`https://amapi.amfoss.in/tracks/${trackId}/tasks`);
-                
-                if (!response.ok) {
-                    throw new Error('Failed to fetch tasks');
+                if (ismentor) {
+                    const fetchedMentees = await fetchMentees();
+                    await fetchMenteeSubmissions(fetchedMentees, fetchedTasks);
+                } else {
+                    // For mentees, get the track ID and fetch submissions
+                    const sessionTrack = sessionStorage.getItem('currentTrack');
+                    if (sessionTrack) {
+                        const trackData = JSON.parse(sessionTrack);
+                        await fetchMySubmissions(fetchedTasks, trackData.id);
+                    }
                 }
-                const tasksData: Task[] = await response.json();
-                setTasks(tasksData);
                 setLoading(false);
             } catch (error) {
-                console.error('Error fetching tasks:', error);
-                
-                if (userRole === 'Mentee') {
-                    router.push('/track');
-                } else {
-                    setLoading(false);
-                }
+                console.error('Error initializing:', error);
+                setLoading(false);
             }
         };
 
-        fetchTasks();
-    }, [isLoggedIn, router, userRole]);
+        init();
+    }, [isLoggedIn, router, ismentor, fetchTasks, fetchMentees, fetchMenteeSubmissions, fetchMySubmissions]);
 
     useEffect(() => {
         if (tasks.length > 0) {
-            setToggledTasks(getTasksByToggle(toggles.findIndex(toggle => toggle === true) || 0));
+            const formattedTasks = getFormattedTasks();
+            console.log('Formatted tasks for mentee:', formattedTasks); // Debug log
+            console.log('My submissions:', mySubmissions); // Debug log
+            setToggledTasks(formattedTasks);
         }
-    }, [tasks, userRole, toggles, getTasksByToggle]);
+    }, [tasks, getFormattedTasks, mySubmissions]);
 
     const getFilteredMentees = useCallback((): string[][][] => {
-        if (!ismentor) return [];
-        const allMentees = getAllMentees();
-        return toggledTasks.map(task => {
-            const taskId = task[0];
-            const originalTaskIndex = tasks.findIndex(t => t.id.toString() === taskId);
-            return originalTaskIndex >= 0 ? allMentees[originalTaskIndex] : [];
+        if (!ismentor || tasks.length === 0 || mentees.length === 0) return [];
+
+        return toggledTasks.map(([taskIdStr]) => {
+            const taskId = parseInt(taskIdStr);
+            return mentees.map(mentee => {
+                const status = menteeSubmissions[mentee.name]?.[taskId] || 'Not Started';
+                return [mentee.name,mentee.email, "-", status];
+            });
         });
-    }, [ismentor, getAllMentees, toggledTasks, tasks]);
+    }, [ismentor, mentees, toggledTasks, menteeSubmissions, tasks]);
 
     const CurrentTaskIndex: number = 0; 
 
@@ -177,20 +218,20 @@ const TasksPage = () => {
         const newToggles: boolean[] = [false, false, false];
         newToggles[index] = true;
         setToggles(newToggles);
-        setToggledTasks(getTasksByToggle(index));
+        setToggledTasks(getFormattedTasks());
     }
-    
+
     const handleTaskClick = (taskId: string) => {
         setSelectedTaskId(taskId);
         setShowReview(true);
     };
-    
-    const handleMenteeClick = (taskId: string, menteeId: string) => {
+
+    const handleMenteeClick = (taskId: string, menteeEmail: string) => {
         setSelectedTaskId(taskId);
-        setSelectedMenteeId(menteeId);
+        setSelectedMenteeId(menteeEmail);
         setShowReview(true);
     };
-    
+
     const handleCloseReview = () => {
         setShowReview(false);
     };
@@ -257,7 +298,7 @@ const TasksPage = () => {
                             </button>
                         </div>
                     )}
-                    
+
                     <div className="bg-deeper-grey rounded-full w-[90%] sm:w-[70%] md:w-[50%] flex justify-between m-auto mt-5">
                         <button 
                             className={`rounded-full w-1/3 py-2 text-sm sm:text-lg md:text-xl lg:text-2xl transition-colors ${toggles[0] ? "bg-primary-yellow text-black" : "bg-deeper-grey"}`} 

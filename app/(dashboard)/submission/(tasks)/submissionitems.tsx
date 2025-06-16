@@ -26,8 +26,8 @@ const TasksViewer = ({ isMentor, tasks, highted_task, mentees = [], onTaskClick,
     
     const handleMenteeClick = (taskIndex: number, menteeIndex: number) => {
         const taskId = tasks[taskIndex][0];
-        const menteeId = mentees[taskIndex][menteeIndex][0];
-        onMenteeClick(taskId, menteeId);
+        const menteeEmail = mentees[taskIndex][menteeIndex][1];
+        onMenteeClick(taskId, menteeEmail);
     };
     
     return (
