@@ -22,6 +22,18 @@ interface SubmissionData {
   submission_text?: string;
 }
 
+// Define proper interface for submission API response
+interface SubmissionResponse {
+  id: number;
+  task_id: number;
+  reference_link: string;
+  status: string;
+  mentor_feedback: string;
+  submitted_at: string;
+  approved_at?: string;
+  submission_text?: string;
+}
+
 const SubmissionReview = ({
   isMentor,
   taskId,
@@ -105,10 +117,10 @@ const SubmissionReview = ({
 
         const res = await fetch(`https://amapi.amfoss.in/submissions/?email=${encodeURIComponent(email)}&track_id=${currentTrackId}`);
         if (res.ok) {
-          const submissions = await res.json();
+          const submissions: SubmissionResponse[] = await res.json();
           console.log('All submissions:', submissions);
           
-          const taskSubmission = submissions.find((s: any) => s.task_id === parseInt(taskId));
+          const taskSubmission = submissions.find((s: SubmissionResponse) => s.task_id === parseInt(taskId));
           console.log('Found task submission:', taskSubmission);
           
           if (taskSubmission) {

@@ -14,9 +14,20 @@ interface TaskDetailsProps {
 }
 
 interface Task {
-  id:string;
-  title:string;
-  description:string;
+  id: string;
+  title: string;
+  description: string;
+}
+
+// Define proper interface for task API response
+interface TaskApiResponse {
+  id: number;
+  title: string;
+  description: string;
+  track_id: number;
+  task_no: number;
+  points: number;
+  deadline: string;
 }
 
 const TaskDetails = ({
@@ -44,10 +55,19 @@ const TaskDetails = ({
       try {
         setLoading(true);
         const res = await fetch(`https://amapi.amfoss.in/tracks/1/tasks`);
-        const tasks = await res.json();
-        const foundTask = tasks.find((t: any) => String(t.id) === String(taskId));
-        setTask(foundTask || null);
-      } catch (e) {
+        const tasks: TaskApiResponse[] = await res.json();
+        const foundTask = tasks.find((t: TaskApiResponse) => String(t.id) === String(taskId));
+        if (foundTask) {
+          setTask({
+            id: foundTask.id.toString(),
+            title: foundTask.title,
+            description: foundTask.description,
+          });
+        } else {
+          setTask(null);
+        }
+      } catch (error) {
+        console.error('Error fetching task:', error);
         setTask(null);
       } finally {
         setLoading(false);

@@ -17,6 +17,16 @@ interface Task {
     id: number;
 }
 
+interface Submission {
+    task_id: number;
+    status: string;
+}
+
+interface Mentee {
+    name: string;
+    email: string;
+}
+
 const TasksPage = () => {
     const { userRole, isLoggedIn } = useAuth();
     const router = useRouter();
@@ -26,7 +36,7 @@ const TasksPage = () => {
     const [selectedMenteeId, setSelectedMenteeId] = useState<string | null>(null);
     const [tasks, setTasks] = useState<Task[]>([]);
     const [loading, setLoading] = useState(true);
-    const [mentees, setMentees] = useState<{ name: string; email: string }[]>([]);
+    const [mentees, setMentees] = useState<Mentee[]>([]);
     const [menteeSubmissions, setMenteeSubmissions] = useState<Record<string, Record<number, string>>>({});
     const [mySubmissions, setMySubmissions] = useState<Record<number, string>>({}); // Added for mentee's own submissions
     const [currentTrack, setCurrentTrack] = useState<{id: number; name: string} | null>(null);
@@ -40,6 +50,86 @@ const TasksPage = () => {
     };
 
     const ismentor = userRole === 'Mentor';
+
+    const fetchTasks = useCallback(async (): Promise<Task[]> => {
+        let trackId;
+
+        if (userRole === 'Mentor') {
+            trackId = 1;
+        } else {
+            const sessionTrack = sessionStorage.getItem('currentTrack');
+            if (!sessionTrack) {
+                router.push('/track');
+                return [];
+            }
+            const trackData = JSON.parse(sessionTrack);
+            trackId = trackData.id;
+            setCurrentTrack(trackData);
+        }
+
+        const response = await fetch(`https://amapi.amfoss.in/tracks/${trackId}/tasks`);
+        if (!response.ok) throw new Error('Failed to fetch tasks');
+        const data = await response.json();
+        setTasks(data);
+        return data;
+    }, [userRole, router]);
+
+    const fetchMentees = useCallback(async (): Promise<Mentee[]> => {
+        const mentorEmail = 'atharvanair04@gmail.com';
+        const res = await fetch(`https://amapi.amfoss.in/mentors/${encodeURIComponent(mentorEmail)}/mentees`);
+        const data = await res.json();
+        setMentees(data.mentees);
+        return data.mentees;
+    }, []);
+
+    const fetchMenteeSubmissions = useCallback(async (menteesList: Mentee[], tasksList: Task[]) => {
+        const results: Record<string, Record<number, string>> = {};
+        for (const mentee of menteesList) {
+            results[mentee.name] = {};
+            for (const task of tasksList) {
+                const res = await fetch(`https://amapi.amfoss.in/submissions/?email=${encodeURIComponent(mentee.email)}&track_id=${task.track_id}`);
+                if (res.ok) {
+                    const submissions: Submission[] = await res.json();
+                    const taskSubmission = submissions.find((s: Submission) => s.task_id === task.id);
+                    results[mentee.name][task.id] = taskSubmission?.status || 'Not Started';
+                }
+            }
+        }
+        setMenteeSubmissions(results);
+    }, []);
+
+    // New function to fetch mentee's own submissions
+    const fetchMySubmissions = useCallback(async (tasksList: Task[], trackId: number) => {
+        const userEmail = getUserEmail();
+        if (!userEmail) {
+            console.log('No user email found');
+            return;
+        }
+        
+        console.log('Fetching submissions for email:', userEmail, 'trackId:', trackId);
+        
+        const results: Record<number, string> = {};
+        for (const task of tasksList) {
+            try {
+                const res = await fetch(`https://amapi.amfoss.in/submissions/?email=${encodeURIComponent(userEmail)}&track_id=${trackId}`);
+                console.log(`Fetching submissions for task ${task.id}, response status:`, res.status);
+                
+                if (res.ok) {
+                    const submissions: Submission[] = await res.json();
+                    console.log(`Submissions for task ${task.id}:`, submissions);
+                    const taskSubmission = submissions.find((s: Submission) => s.task_id === task.id);
+                    results[task.id] = taskSubmission?.status || 'Not Started';
+                } else {
+                    results[task.id] = 'Not Started';
+                }
+            } catch (error) {
+                console.error(`Error fetching submission for task ${task.id}:`, error);
+                results[task.id] = 'Not Started';
+            }
+        }
+        console.log('Final results:', results);
+        setMySubmissions(results);
+    }, []);
 
     const getFormattedTasks = useCallback((): string[][] => {
         return tasks.map((task) => {
@@ -65,86 +155,6 @@ const TasksPage = () => {
     }, [tasks, ismentor, mentees, menteeSubmissions, mySubmissions]);
 
     const [toggledTasks, setToggledTasks] = useState<string[][]>([]);
-
-    const fetchTasks = async (): Promise<Task[]> => {
-        let trackId;
-
-        if (userRole === 'Mentor') {
-            trackId = 1;
-        } else {
-            const sessionTrack = sessionStorage.getItem('currentTrack');
-            if (!sessionTrack) {
-                router.push('/track');
-                return [];
-            }
-            const trackData = JSON.parse(sessionTrack);
-            trackId = trackData.id;
-            setCurrentTrack(trackData);
-        }
-
-        const response = await fetch(`https://amapi.amfoss.in/tracks/${trackId}/tasks`);
-        if (!response.ok) throw new Error('Failed to fetch tasks');
-        const data = await response.json();
-        setTasks(data);
-        return data;
-    };
-
-    const fetchMentees = async () => {
-        const mentorEmail = 'atharvanair04@gmail.com';
-        const res = await fetch(`https://amapi.amfoss.in/mentors/${encodeURIComponent(mentorEmail)}/mentees`);
-        const data = await res.json();
-        setMentees(data.mentees);
-        return data.mentees;
-    };
-
-    const fetchMenteeSubmissions = async (menteesList: { email: string, name: string }[], tasksList: Task[]) => {
-        const results: Record<string, Record<number, string>> = {};
-        for (const mentee of menteesList) {
-            results[mentee.name] = {};
-            for (const task of tasksList) {
-                const res = await fetch(`https://amapi.amfoss.in/submissions/?email=${encodeURIComponent(mentee.email)}&track_id=${task.track_id}`);
-                if (res.ok) {
-                    const submissions = await res.json();
-                    const taskSubmission = submissions.find((s: any) => s.task_id === task.id);
-                    results[mentee.name][task.id] = taskSubmission?.status || 'Not Started';
-                }
-            }
-        }
-        setMenteeSubmissions(results);
-    };
-
-    // New function to fetch mentee's own submissions
-    const fetchMySubmissions = async (tasksList: Task[], trackId: number) => {
-        const userEmail = getUserEmail();
-        if (!userEmail) {
-            console.log('No user email found');
-            return;
-        }
-        
-        console.log('Fetching submissions for email:', userEmail, 'trackId:', trackId);
-        
-        const results: Record<number, string> = {};
-        for (const task of tasksList) {
-            try {
-                const res = await fetch(`https://amapi.amfoss.in/submissions/?email=${encodeURIComponent(userEmail)}&track_id=${trackId}`);
-                console.log(`Fetching submissions for task ${task.id}, response status:`, res.status);
-                
-                if (res.ok) {
-                    const submissions = await res.json();
-                    console.log(`Submissions for task ${task.id}:`, submissions);
-                    const taskSubmission = submissions.find((s: any) => s.task_id === task.id);
-                    results[task.id] = taskSubmission?.status || 'Not Started';
-                } else {
-                    results[task.id] = 'Not Started';
-                }
-            } catch (error) {
-                console.error(`Error fetching submission for task ${task.id}:`, error);
-                results[task.id] = 'Not Started';
-            }
-        }
-        console.log('Final results:', results);
-        setMySubmissions(results);
-    };
 
     useEffect(() => {
         if (!isLoggedIn) {
@@ -179,7 +189,7 @@ const TasksPage = () => {
         };
 
         init();
-    }, [isLoggedIn, router, userRole]);
+    }, [isLoggedIn, router, ismentor, fetchTasks, fetchMentees, fetchMenteeSubmissions, fetchMySubmissions]);
 
     useEffect(() => {
         if (tasks.length > 0) {
@@ -188,7 +198,7 @@ const TasksPage = () => {
             console.log('My submissions:', mySubmissions); // Debug log
             setToggledTasks(formattedTasks);
         }
-    }, [tasks, getFormattedTasks]);
+    }, [tasks, getFormattedTasks, mySubmissions]);
 
     const getFilteredMentees = useCallback((): string[][][] => {
         if (!ismentor || tasks.length === 0 || mentees.length === 0) return [];
