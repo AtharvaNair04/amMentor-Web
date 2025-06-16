@@ -7,7 +7,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   return (
     <div className="bg-[#1E1E1E] text-white px-6 py-10 min-h-screen font-Inter flex flex-col items-center pt-20 relative">
       <Image 
-        src="/amMentor.png" 
+        src="/Logos/amMentor.png" 
         alt="logo"
         fill
         className="object-contain opacity-10"

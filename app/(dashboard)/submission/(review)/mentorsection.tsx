@@ -8,6 +8,7 @@ interface MentorSectionProps {
   reviewStatus: string;
   setReviewStatus: (status: string) => void;
   setTaskStatus: (status: string) => void;
+  submissionId?: number;
 }
 
 const MentorSection = ({
@@ -17,34 +18,109 @@ const MentorSection = ({
   taskStatus,
   setReviewStatus,
   setTaskStatus,
+  submissionId,
 }: MentorSectionProps) => {
-  const handleReviewAction = (action: string) => {
-    setReviewStatus(action);
 
-    let message = '';
-    let newTaskStatus = taskStatus;
+  const isSubmittedForReview = (status: string): boolean => {
+    const submittedStatuses = ['submitted', 'Submitted'];
+    return submittedStatuses.includes(status);
+  };
 
-    switch (action) {
-      case 'approved':
-        message = 'Task approved successfully!';
-        break;
-      case 'rejected':
-        message = 'Task rejected. Please provide feedback in mentor notes.';
-        break;
-        case 'paused':
-        message = 'Task paused. You can resume it later.';
-        break;
+  const isReviewed = (status: string): boolean => {
+    const reviewedStatuses = ['reviewed', 'Reviewed', 'approved', 'Approved', 'rejected', 'Rejected', 'paused', 'Paused'];
+    return reviewedStatuses.includes(status);
+  };
+
+  const isWaitingForSubmission = (status: string): boolean => {
+    const waitingStatuses = ['in progress', 'In Progress', 'not started', 'Not Started'];
+    return waitingStatuses.includes(status);
+  };
+
+  const handleReviewAction = async (action: string) => {
+    if (!submissionId) {
+      alert('No submission found to review');
+      return;
     }
 
-    setTaskStatus(newTaskStatus);
-    alert(message);
+    const mentorEmail = localStorage.getItem('email');
+    if (!mentorEmail) {
+      alert('Mentor email not found. Please log in again.');
+      return;
+    }
+
+    let status = '';
+    switch (action) {
+      case 'approved':
+        status = 'Approved';
+        break;
+      case 'rejected':
+        status = 'Rejected';
+        break;
+      case 'paused':
+        status = 'Paused';
+        break;
+      case 'unpaused':
+        status = 'In Progress';
+        break;
+      default:
+        status = 'Pending';
+    }
+
+    const body = {
+      submission_id: submissionId,
+      mentor_email: mentorEmail,
+      status: status,
+      mentor_feedback: mentorNotes || '',
+    };
+
+    console.log('Submitting review with body:', body);
+
+    try {
+      const res = await fetch('https://amapi.amfoss.in/progress/approve-task', {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          Accept: 'application/json',
+        },
+        body: JSON.stringify(body),
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        alert(`Review failed: ${data.detail || 'Unknown error'}`);
+        return;
+      }
+
+      setReviewStatus(action);
+      setTaskStatus(action === 'unpaused' ? 'In Progress' : 'Reviewed');
+
+      let message = '';
+      switch (action) {
+        case 'approved':
+          message = 'Task approved successfully!';
+          break;
+        case 'rejected':
+          message = 'Task rejected successfully!';
+          break;
+        case 'paused':
+          message = 'Task paused successfully!';
+          break;
+        case 'unpaused':
+          message = 'Task unpaused successfully!';
+          break;
+      }
+      alert(message);
+    } catch (error) {
+      console.error('Review error:', error);
+      alert('An error occurred while reviewing the task.');
+    }
   };
 
   return (
     <div className="w-full md:w-1/3 border-t md:border-t-0 md:border-l border-gray-700 pt-6 md:pt-0 md:pl-8">
       <div className="mb-6">
         <h2 className="font-bold mb-3 md:mb-4 text-white-text">MENTOR NOTES:</h2>
-        
+
         {isMentor ? (
           <textarea
             value={mentorNotes}
@@ -54,11 +130,11 @@ const MentorSection = ({
           />
         ) : (
           <div className="bg-dark-grey rounded-md p-3 md:p-4 min-h-[100px] md:min-h-[120px] text-sm md:text-base text-white-text mb-4 md:mb-6">
-            {mentorNotes}
+            {mentorNotes || 'No mentor notes provided yet.'}
           </div>
         )}
       </div>
-      
+
       <div className="mt-6 md:mt-10">
         <div className="flex justify-between items-center mb-4 md:mb-6">
           <h2 className="font-bold text-white-text">Resources:</h2>
@@ -68,7 +144,7 @@ const MentorSection = ({
             </svg>
           </button>
         </div>
-        
+
         <div className="bg-dark-grey rounded-md p-2 md:p-3 flex items-center mb-8">
           <div className="mr-3 md:mr-4">
             <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 md:h-8 md:w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -81,7 +157,7 @@ const MentorSection = ({
           </div>
         </div>
 
-        {isMentor && (taskStatus === 'Submitted') && (
+        {isMentor && isSubmittedForReview(taskStatus) && (
           <div className="flex justify-between gap-2">
             <button 
               onClick={() => handleReviewAction('rejected')}
@@ -110,13 +186,24 @@ const MentorSection = ({
           </div>
         )}
 
-        {isMentor && taskStatus === 'Reviewed' && (
-          <div className="text-center text-green-400 text-sm">
-            This task has been reviewed
-          </div>
+        {isMentor && isReviewed(taskStatus) && (
+          taskStatus.toLowerCase() === 'paused' ? (
+            <div className="flex justify-center mt-4">
+              <button 
+                onClick={() => handleReviewAction('unpaused')}
+                className="bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-md font-medium"
+              >
+                Unpause
+              </button>
+            </div>
+          ) : (
+            <div className="text-center text-green-400 text-sm">
+              This task has been reviewed
+            </div>
+          )
         )}
-        
-        {isMentor && (taskStatus === 'In Progress' || taskStatus === 'Not Started') && (
+
+        {isMentor && isWaitingForSubmission(taskStatus) && (
           <div className="text-center text-gray-400 text-sm">
             Waiting for mentee submission
           </div>
