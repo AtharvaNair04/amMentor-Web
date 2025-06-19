@@ -11,15 +11,22 @@ interface TaskDetailsProps {
   isAlreadySubmitted: boolean;
   trackId?: string | number;
   onSubmitTask: () => void;
+  // New props for sequential task logic
+  allSubmissions?: Record<number, string>;
+  isTaskUnlocked?: boolean;
+  tasks?: Task[];
 }
 
 interface Task {
-  id: string;
+  id: number;
   title: string;
   description: string;
+  deadline?: number | null;
+  track_id: number;
+  task_no: number;
+  points: number;
 }
 
-// Define proper interface for task API response
 interface TaskApiResponse {
   id: number;
   title: string;
@@ -27,7 +34,14 @@ interface TaskApiResponse {
   track_id: number;
   task_no: number;
   points: number;
-  deadline: string;
+  deadline: number | null;
+}
+
+interface TaskStartData {
+  taskId: string;
+  startDate: string;
+  trackId: string | number;
+  menteeEmail: string;
 }
 
 const TaskDetails = ({
@@ -41,27 +55,248 @@ const TaskDetails = ({
   isAlreadySubmitted,
   trackId,
   onSubmitTask,
+  allSubmissions = {},
+  isTaskUnlocked = true,
+  tasks = [],
 }: TaskDetailsProps) => {
   const [task, setTask] = useState<Task | null>(null);
   const [loading, setLoading] = useState(true);
   const [hasStarted, setHasStarted] = useState(false);
+  const [startDate, setStartDate] = useState<string | null>(null);
+  const [daysElapsed, setDaysElapsed] = useState(0);
+  const [progressPercentage, setProgressPercentage] = useState(0);
 
-   useEffect(() => {
+  // Generate storage key for this specific task and user
+  const getStorageKey = (taskId: string, email: string): string => {
+    return `task_start_${taskId}_${email}`;
+  };
+
+  // Load start date from localStorage on component mount
+  useEffect(() => {
+    const email = localStorage.getItem('email');
+    if (!taskId || !email) return;
+
+    const storageKey = getStorageKey(taskId, email);
+    const storedStartData = localStorage.getItem(storageKey);
+    
+    if (storedStartData) {
+      try {
+        const startData: TaskStartData = JSON.parse(storedStartData);
+        setStartDate(startData.startDate);
+        setHasStarted(true);
+        console.log('Loaded start date from storage:', startData.startDate);
+      } catch (error) {
+        console.error('Error parsing stored start data:', error);
+      }
+    }
+  }, [taskId]);
+
+  // Calculate progress based on start date and deadline
+  useEffect(() => {
+    if (!startDate || !task?.deadline) return;
+
+    const calculateProgress = () => {
+      const start = new Date(startDate);
+      const now = new Date();
+      const daysDiff = Math.floor((now.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
+      
+      setDaysElapsed(daysDiff);
+      
+      if (task.deadline && task.deadline > 0) {
+        const progress = Math.min((daysDiff / task.deadline) * 100, 100);
+        setProgressPercentage(progress);
+      }
+    };
+
+    calculateProgress();
+    
+    // Update progress every hour
+    const interval = setInterval(calculateProgress, 60 * 60 * 1000);
+    return () => clearInterval(interval);
+  }, [startDate, task?.deadline]);
+
+  // FIXED: Use the same logic as the main page for task unlocking
+  const isCurrentTaskUnlocked = (currentTaskId: string): boolean => {
+    if (isMentor) return true; // Mentors can access any task
+    
+    const currentId = parseInt(currentTaskId);
+    if (currentId <= 1) return true; // First task is always unlocked
+    
+    // Find the previous task
+    const previousTaskId = currentId - 1;
+    const previousTask = tasks.find(task => task.id === previousTaskId);
+    
+    // If previous task doesn't exist, don't unlock
+    if (!previousTask) {
+      console.log(`Task ${currentId} locked because previous task ${previousTaskId} not found`);
+      return false;
+    }
+    
+    // CRITICAL FIX: If previous task has null deadline, current task is automatically unlocked
+    if (previousTask.deadline === null) {
+      console.log(`Task ${currentId} unlocked because previous task ${previousTaskId} has null deadline`);
+      return true;
+    }
+    
+    // Otherwise, check if previous task is completed
+    const previousTaskStatus = allSubmissions[previousTaskId];
+    const isUnlocked = previousTaskStatus === 'Submitted' || previousTaskStatus === 'Reviewed';
+    
+    console.log(`Task ${currentId} unlock check:`, {
+      previousTaskId,
+      previousTaskDeadline: previousTask.deadline,
+      previousTaskStatus,
+      isUnlocked
+    });
+    
+    return isUnlocked;
+  };
+
+  const getBlockedTaskMessage = (currentTaskId: string): string => {
+    const currentId = parseInt(currentTaskId);
+    const previousTaskId = currentId - 1;
+    const previousTask = tasks.find(task => task.id === previousTaskId);
+    
+    if (previousTask && previousTask.deadline === null) {
+      return `Task ${previousTaskId} ("${previousTask.title}") has no deadline and should automatically unlock this task. If you're seeing this error, please refresh the page or contact support.`;
+    }
+    
+    const previousTaskTitle = previousTask ? `"${previousTask.title}"` : previousTaskId.toString();
+    return `You must submit Task ${previousTaskId} (${previousTaskTitle}) before you can start this task.`;
+  };
+
+  // Handle start task button click
+  const handleStartTask = async () => {
+    const email = localStorage.getItem('email');
+    if (!email || !taskId || !trackId) {
+      alert('Missing required information. Please log in again.');
+      return;
+    }
+
+    const currentStartDate = new Date().toISOString().split('T')[0]; // YYYY-MM-DD format
+    
+    // Store start data in localStorage
+    const startData: TaskStartData = {
+      taskId,
+      startDate: currentStartDate,
+      trackId,
+      menteeEmail: email
+    };
+    
+    const storageKey = getStorageKey(taskId, email);
+    localStorage.setItem(storageKey, JSON.stringify(startData));
+    
+    // Update component state
+    setStartDate(currentStartDate);
+    setHasStarted(true);
+    
+    console.log('Task started:', startData);
+    
+    // Optionally, you can also send this to your backend API here
+    try {
+      // You can create an API endpoint to track task starts if needed
+      // await fetch('https://amapi.amfoss.in/tasks/start', {
+      //   method: 'POST',
+      //   headers: { 'Content-Type': 'application/json' },
+      //   body: JSON.stringify(startData)
+      // });
+    } catch (error) {
+      console.error('Error sending start data to server:', error);
+      // Don't show error to user as localStorage storage is more important
+    }
+  };
+
+  // Enhanced submit function to use stored start date
+  const handleSubmitTask = async () => {
+    const email = localStorage.getItem('email');
+    if (!email) {
+      alert('Email not found. Please log in again.');
+      return;
+    }
+
+    // Get the correct trackId for submission
+    let currentTrackId = trackId;
+    if (!currentTrackId) {
+      const sessionTrack = sessionStorage.getItem('currentTrack');
+      if (sessionTrack) {
+        const trackData = JSON.parse(sessionTrack);
+        currentTrackId = trackData.id;
+      } else {
+        alert('Track information not found. Please select a track.');
+        return;
+      }
+    }
+
+    if (!currentTrackId || !taskId || !submissionText.trim()) {
+      alert('Missing track, task ID, or work submission');
+      return;
+    }
+
+    // Use stored start date or current date if not started yet
+    let submissionStartDate = startDate;
+    if (!submissionStartDate) {
+      // If somehow the task wasn't officially started, start it now
+      submissionStartDate = new Date().toISOString().split('T')[0];
+      handleStartTask();
+    }
+
+    const body = {
+      track_id: Number(currentTrackId),
+      task_no: Number(taskId) - 1,
+      reference_link: submissionText.trim(),
+      start_date: submissionStartDate, // Use the stored start date
+      mentee_email: email,
+    };
+
+    console.log('Submitting with start date:', submissionStartDate);
+
+    try {
+      const res = await fetch('https://amapi.amfoss.in/progress/submit-task', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Accept: 'application/json',
+        },
+        body: JSON.stringify(body),
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        alert(`Submission failed: ${data.detail || 'Unknown error'}`);
+        return;
+      }
+
+      alert('Task submitted successfully!');
+      // Call the original onSubmitTask to update parent component
+      onSubmitTask();
+    } catch (err) {
+      console.error('Submission error:', err);
+      alert('An error occurred while submitting the task.');
+    }
+  };
+
+  useEffect(() => {
     const fetchTask = async () => {
-      if (/*!trackId ||*/ !taskId) {
+      if (!taskId) {
         setLoading(false);
         return;
       }
       try {
         setLoading(true);
-        const res = await fetch(`https://amapi.amfoss.in/tracks/1/tasks`);
+        // Use the track ID from props if available, otherwise default to 1
+        const fetchTrackId = trackId || 1;
+        const res = await fetch(`https://amapi.amfoss.in/tracks/${fetchTrackId}/tasks`);
         const tasks: TaskApiResponse[] = await res.json();
         const foundTask = tasks.find((t: TaskApiResponse) => String(t.id) === String(taskId));
         if (foundTask) {
           setTask({
-            id: foundTask.id.toString(),
+            id: foundTask.id,
             title: foundTask.title,
             description: foundTask.description,
+            deadline: foundTask.deadline,
+            track_id: foundTask.track_id,
+            task_no: foundTask.task_no,
+            points: foundTask.points,
           });
         } else {
           setTask(null);
@@ -76,9 +311,30 @@ const TaskDetails = ({
     fetchTask();
   }, [trackId, taskId]);
 
-  const totalDays = 30;
-  const daysLeft = 5;
-  const progressPercentage = ((totalDays - daysLeft) / totalDays) * 100;
+  // FIXED: Use the corrected unlock logic instead of the passed prop
+  const taskUnlocked = taskId ? isCurrentTaskUnlocked(taskId) : true;
+  const canStartTask = !isMentor && taskUnlocked && !hasStarted && (taskStatus === 'Not Started');
+  const showLockedMessage = !isMentor && !taskUnlocked && taskStatus === 'Not Started';
+  
+  // FIXED: Update canEdit logic to use the corrected unlock status
+  const canEditTask = !isMentor && taskUnlocked && (taskStatus === 'In Progress' || taskStatus === 'Not Started') && hasStarted;
+
+  // Calculate days remaining for display
+  const getDaysRemaining = (): number => {
+    if (!task?.deadline || !startDate) return 0;
+    return Math.max(0, task.deadline - daysElapsed);
+  };
+
+  const getProgressColor = (): string => {
+    if (!task?.deadline) return 'green';
+    const remaining = getDaysRemaining();
+    const total = task.deadline;
+    const percentRemaining = (remaining / total) * 100;
+    
+    if (percentRemaining > 50) return 'green';
+    if (percentRemaining > 25) return 'yellow';
+    return 'red';
+  };
 
   if (loading) {
     return <div className="text-white">Loading task details...</div>;
@@ -92,31 +348,54 @@ const TaskDetails = ({
             {task?.title || 'TASK NAME'}
           </h2>
           <p className="text-gray-400">TASK - {taskId || 'XX'}</p>
+          {task?.deadline === null && (
+            <p className="text-green-400 text-sm">📅 No deadline - Next task automatically unlocked</p>
+          )}
+          {task?.deadline !== null && task?.deadline && (
+            <p className="text-yellow-400 text-sm">📅 Deadline: {task.deadline} days</p>
+          )}
+          {startDate && (
+            <p className="text-blue-400 text-sm">🚀 Started: {new Date(startDate).toLocaleDateString()}</p>
+          )}
           {isMentor && menteeId && (
             <p className="text-primary-yellow font-semibold mt-2">Mentee: {menteeId}</p>
           )}
           <p className="text-xs md:text-sm text-gray-300">
             {task?.description || 'TASK DETAILS ...'}
           </p>
+          
+          {/* Task Status and Lock Message */}
           <div className="mt-3">
             <span className={`inline-block px-3 py-1 rounded-full text-xs font-semibold ${
               taskStatus === 'Reviewed' ? 'bg-green-600 text-white' :
               taskStatus === 'Submitted' ? 'bg-primary-yellow text-black' :
               taskStatus === 'In Progress' ? 'bg-blue-600 text-white' :
+              showLockedMessage ? 'bg-red-600 text-white' :
+              hasStarted ? 'bg-blue-600 text-white' :
               'bg-gray-600 text-white'
             }`}>
-              Status: {taskStatus}
+              Status: {showLockedMessage ? 'Locked' : hasStarted && taskStatus === 'Not Started' ? 'In Progress' : taskStatus}
             </span>
-            {!isMentor && !hasStarted &&  taskStatus === 'In Progress' &&(
+            
+            {canStartTask && (
               <button
-                onClick={() => setHasStarted(true)}
+                onClick={handleStartTask}
                 className="ml-4 px-4 py-1 bg-primary-yellow text-dark-bg rounded-full text-xs font-semibold hover:bg-yellow-400 transition-colors"
               >
                 START TASK
               </button>
             )}
-            
           </div>
+          
+          {/* Locked Task Message */}
+          {showLockedMessage && (
+            <div className="mt-3 p-3 bg-red-900 bg-opacity-50 border border-red-600 rounded-md">
+              <p className="text-red-300 text-sm">
+                🔒 {getBlockedTaskMessage(taskId || '1')}
+              </p>
+            </div>
+          )}
+          
           <div className="border-t border-white mb-2 md:mb-4 mt-4"></div>
         </div>
       </div>
@@ -128,25 +407,62 @@ const TaskDetails = ({
             
             <div className="relative mb-6">
               <div className="text-xs absolute -top-6 left-1/2 transform -translate-x-1/2 text-gray-300">
-                5 DAYS LEFT
+                {task?.deadline === null ? 'NO DEADLINE' : 
+                 hasStarted && startDate ? `${getDaysRemaining()} DAYS LEFT` : 
+                 task?.deadline ? `${task.deadline} DAYS TOTAL` : ''}
               </div>
-              <div className="h-2 w-full bg-gradient-to-r from-green via-yellow-400 to-red rounded-full">
+              <div className={`h-2 w-full bg-gradient-to-r from-green via-yellow-400 to-red rounded-full`}>
                 <div className="relative">
                   <div 
-                    className="absolute -top-2 w-5 h-5 md:w-6 md:h-6 bg-white rounded-full border-2 border-black"
-                    style={{ left: `calc(${progressPercentage}% - 10px)` }}
+                    className="absolute -top-2 w-5 h-5 md:w-6 md:h-6 bg-white rounded-full border-2 border-black transition-all duration-1000 ease-out"
+                    style={{ 
+                      left: `calc(${task?.deadline === null ? 100 : hasStarted ? progressPercentage : 0}% - 10px)`,
+                      backgroundColor: hasStarted ? 'white' : '#9ca3af'
+                    }}
                   ></div>
                 </div>
               </div>
               <div className="text-xs absolute -bottom-6 right-0 text-gray-300">
-                DEADLINE
+                {task?.deadline === null ? 'NO DEADLINE' : 'DEADLINE'}
+              </div>
+              <div className="text-xs absolute -bottom-6 left-0 text-gray-300">
+                START
               </div>
             </div>
             
-            <div className="flex justify-between text-xs mt-8 text-gray-400">
-              <span>25 Days</span>
-              <span>30 Days</span>
-            </div>
+            {/* Progress Stats */}
+            {hasStarted && startDate && task?.deadline && (
+              <div className="flex justify-between text-xs mt-8 text-gray-400">
+                <span>Day {daysElapsed}</span>
+                <span className={`text-${getProgressColor()}-400 font-semibold`}>
+                  {getDaysRemaining()} days remaining
+                </span>
+                <span>Day {task.deadline}</span>
+              </div>
+            )}
+            
+            {task?.deadline === null && (
+              <div className="text-center text-xs mt-8 text-green-400">
+                ✅ This task has no deadline - take your time!
+              </div>
+            )}
+
+            {/* Time tracking info */}
+            {hasStarted && startDate && (
+              <div className="mt-4 p-3 bg-blue-900 bg-opacity-30 rounded-md">
+                <div className="text-sm text-blue-300">
+                  ⏱️ Started: {new Date(startDate).toLocaleDateString()}
+                  {daysElapsed > 0 && (
+                    <span className="ml-2">({daysElapsed} day{daysElapsed !== 1 ? 's' : ''} ago)</span>
+                  )}
+                </div>
+                {task?.deadline && (
+                  <div className="text-xs text-blue-200 mt-1">
+                    Progress: {Math.min(progressPercentage, 100).toFixed(1)}% of time elapsed
+                  </div>
+                )}
+              </div>
+            )}
           </>
         )}
 
@@ -155,7 +471,7 @@ const TaskDetails = ({
             <div className="flex flex-col gap-2">
               <div className="flex">
                 <span className="text-primary-yellow font-semibold">Starting Date: </span>
-                <span className="ml-2">10/05/2025</span>
+                <span className="ml-2">{startDate ? new Date(startDate).toLocaleDateString() : 'Not started'}</span>
               </div>
               {isAlreadySubmitted && (
                 <div className="flex">
@@ -173,7 +489,17 @@ const TaskDetails = ({
         
         {!isMentor ? (
           <>
-            {canEdit || hasStarted ? (
+            {/* Show message if task hasn't been started yet */}
+            {!hasStarted && taskUnlocked && !showLockedMessage && (
+              <div className="mb-4 p-3 bg-yellow-900 bg-opacity-30 border border-yellow-600 rounded-md">
+                <p className="text-yellow-300 text-sm">
+                  💡 Click "START TASK" above to begin working on this task and track your progress!
+                </p>
+              </div>
+            )}
+
+            {/* FIXED: Use corrected canEdit logic and task unlock status */}
+            {canEditTask ? (
               <>
                 <textarea
                   value={submissionText}
@@ -189,7 +515,7 @@ const TaskDetails = ({
                     onClick={(e) => {
                       e.preventDefault();
                       if (submissionText.trim()) {
-                        onSubmitTask();
+                        handleSubmitTask();
                       }
                     }}
                     className={`px-6 md:px-10 py-2 rounded-full text-sm md:text-md font-bold shadow-md ${
@@ -202,90 +528,54 @@ const TaskDetails = ({
                   </button>
                 </div>
               </>
+            ) : showLockedMessage ? (
+              // Show locked submission area
+              <div className="bg-gray-800 rounded-md p-3 md:p-4 min-h-[100px] md:min-h-[120px] text-sm md:text-base text-gray-500 mb-4 md:mb-6 border border-gray-600 relative">
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <div className="text-center">
+                    <div className="text-4xl mb-2">🔒</div>
+                    <p className="text-gray-400">Complete previous task to unlock</p>
+                  </div>
+                </div>
+              </div>
             ) : (
               <>
-                <div className="bg-dark-grey rounded-md p-3 md:p-4 min-h-[100px] md:min-h-[120px] text-sm md:text-base text-white-text mb-4 md:mb-6 border border-gray-600">
-                  {submissionText ? (
-                    // Check if it looks like a URL and make it clickable
-                    submissionText.match(/https?:\/\/[^\s]+/) ? (
-                      <div>
-                        {submissionText.split(/(https?:\/\/[^\s]+)/).map((part, index) => 
-                          part.match(/https?:\/\/[^\s]+/) ? (
-                            <a 
-                              key={index}
-                              href={part}
-                              target="_blank" 
-                              rel="noopener noreferrer"
-                              className="text-blue-400 hover:text-blue-300 underline break-all"
-                            >
-                              {part}
-                            </a>
-                          ) : part
-                        )}
-                      </div>
-                    ) : submissionText
-                  ) : 'No submission provided'}
-                </div>
-                
-                <div className="flex justify-center">
-                  <button 
-                    disabled
-                    className="px-6 md:px-10 py-2 rounded-full text-sm md:text-md font-bold bg-gray-600 text-gray-400 cursor-not-allowed"
-                  >
-                    {taskStatus === 'Reviewed' ? 'REVIEWED' : 'SUBMITTED'}
-                  </button>
+                <div className="bg-dark-grey rounded-md p-3 md:p-4 min-h-[100px] md:min-h-[120px] text-sm md:text-base text-gray-300 mb-4 md:mb-6 border border-gray-600">
+                  {submissionText || "No submission yet"}
                 </div>
                 
                 {taskStatus === 'Submitted' && (
-                  <p className="text-center text-xs text-gray-400 mt-2">
-                    Your work has been submitted and is awaiting review.
-                  </p>
+                  <div className="text-center">
+                    <p className="text-primary-yellow font-semibold">
+                      ✅ Task submitted! Waiting for review.
+                    </p>
+                  </div>
                 )}
                 
                 {taskStatus === 'Reviewed' && (
-                  <p className="text-center text-xs text-green-400 mt-2">
-                    Your work has been reviewed by your mentor.
-                  </p>
+                  <div className="text-center">
+                    <p className="text-green-400 font-semibold">
+                      🎉 Task completed and reviewed!
+                    </p>
+                  </div>
+                )}
+
+                {taskUnlocked && !hasStarted && taskStatus === 'Not Started' && (
+                  <div className="text-center">
+                    <p className="text-gray-400">
+                      Start the task above to begin working on it.
+                    </p>
+                  </div>
                 )}
               </>
             )}
           </>
         ) : (
-          <div>
-            <div className="bg-dark-grey rounded-md p-3 md:p-4 min-h-[100px] md:min-h-[120px] text-sm md:text-base text-white-text">
-              {submissionText ? (
-                // Check if it looks like a URL and make it clickable for mentors too
-                submissionText.match(/https?:\/\/[^\s]+/) ? (
-                  <div>
-                    {submissionText.split(/(https?:\/\/[^\s]+)/).map((part, index) => 
-                      part.match(/https?:\/\/[^\s]+/) ? (
-                        <a 
-                          key={index}
-                          href={part}
-                          target="_blank" 
-                          rel="noopener noreferrer"
-                          className="text-blue-400 hover:text-blue-300 underline break-all"
-                        >
-                          {part}
-                        </a>
-                      ) : part
-                    )}
-                  </div>
-                ) : submissionText
-              ) : 'No submission provided'}
-            </div>
+          // Mentor view
+          <div className="bg-dark-grey rounded-md p-3 md:p-4 min-h-[100px] md:min-h-[120px] text-sm md:text-base text-white-text mb-4 md:mb-6">
+            {submissionText || "No submission from mentee yet"}
           </div>
         )}
-      </div>
-      
-      <div>
-        <h2 className="font-bold mb-3 md:mb-4 text-white-text">BADGES EARNED</h2>
-        <div className="flex gap-3 md:gap-6">
-          <div className="w-12 h-12 md:w-16 md:h-16 bg-red rounded-full"></div>
-          <div className="w-12 h-12 md:w-16 md:h-16 bg-primary-yellow rounded-full"></div>
-          <div className="w-12 h-12 md:w-16 md:h-16 bg-gray-600 rounded-full"></div>
-          <div className="w-12 h-12 md:w-16 md:h-16 bg-gray-600 rounded-full"></div>
-        </div>
       </div>
     </div>
   );
