@@ -20,7 +20,6 @@ const MentorSection = ({
   setTaskStatus,
   submissionId,
 }: MentorSectionProps) => {
-
   const isSubmittedForReview = (status: string): boolean => {
     const submittedStatuses = ['submitted', 'Submitted'];
     return submittedStatuses.includes(status);
@@ -48,6 +47,11 @@ const MentorSection = ({
       return;
     }
 
+    if (!mentorNotes.trim()) {
+      alert('Please provide mentor feedback before submitting a review.');
+      return;
+    }
+
     let status = '';
     switch (action) {
       case 'approved':
@@ -70,10 +74,8 @@ const MentorSection = ({
       submission_id: submissionId,
       mentor_email: mentorEmail,
       status: status,
-      mentor_feedback: mentorNotes || '',
+      mentor_feedback: mentorNotes.trim(),
     };
-
-    console.log('Submitting review with body:', body);
 
     try {
       const res = await fetch('https://amapi.amfoss.in/progress/approve-task', {
@@ -122,12 +124,17 @@ const MentorSection = ({
         <h2 className="font-bold mb-3 md:mb-4 text-white-text">MENTOR NOTES:</h2>
 
         {isMentor ? (
-          <textarea
-            value={mentorNotes}
-            onChange={(e) => setMentorNotes(e.target.value)}
-            placeholder="Add your notes for the mentee here..."
-            className="w-full bg-dark-grey rounded-md p-3 md:p-4 min-h-[100px] md:min-h-[120px] text-sm md:text-base text-white-text mb-4 md:mb-6 resize-none border-none outline-none"
-          />
+          <>
+            <textarea
+              value={mentorNotes}
+              onChange={(e) => setMentorNotes(e.target.value)}
+              placeholder="Add your notes for the mentee here..."
+              className="w-full bg-dark-grey rounded-md p-3 md:p-4 min-h-[100px] md:min-h-[120px] text-sm md:text-base text-white-text mb-2 resize-none border-none outline-none"
+            />
+            <p className="text-xs text-gray-400 mb-4">
+              ✏️ These notes will be saved when you approve or reject the task.
+            </p>
+          </>
         ) : (
           <div className="bg-dark-grey rounded-md p-3 md:p-4 min-h-[100px] md:min-h-[120px] text-sm md:text-base text-white-text mb-4 md:mb-6">
             {mentorNotes || 'No mentor notes provided yet.'}
@@ -135,6 +142,7 @@ const MentorSection = ({
         )}
       </div>
 
+      {/* ✅ Resources Section */}
       <div className="mt-6 md:mt-10">
         <div className="flex justify-between items-center mb-4 md:mb-6">
           <h2 className="font-bold text-white-text">Resources:</h2>
@@ -157,6 +165,7 @@ const MentorSection = ({
           </div>
         </div>
 
+        {/* Review Action Buttons */}
         {isMentor && isSubmittedForReview(taskStatus) && (
           <div className="flex justify-between gap-2">
             <button 
