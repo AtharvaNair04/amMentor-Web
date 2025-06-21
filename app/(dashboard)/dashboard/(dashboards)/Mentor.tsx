@@ -67,6 +67,16 @@ const MentorDashboard = () => {
     const [currentTask, setCurrentTask] = useState<Task | null>(null);
     const menteeOptions = useMemo<JSX.Element[]>(() => [], []);
 
+    // Calculate submitted tasks count for a mentee
+    const getSubmittedTasksCount = useCallback((menteeName: string): number => {
+        if (!menteeSubmissions[menteeName]) return 0;
+        
+        const submissions = menteeSubmissions[menteeName];
+        return Object.values(submissions).filter(status => 
+            status === 'Submitted' || status === 'Reviewed'
+        ).length;
+    }, [menteeSubmissions]);
+
     const getCurrentTaskForMentee = useCallback((menteeName: string): Task | null => {
         if (!tasks.length || !menteeSubmissions[menteeName]) return null;
         
@@ -266,6 +276,9 @@ const MentorDashboard = () => {
         }
     }, [tasks, menteeSubmissions, selectedMentee, getCurrentTaskForMentee]);
 
+    // Calculate submitted tasks count for the selected mentee
+    const submittedTasksCount = selectedMentee ? getSubmittedTasksCount(selectedMentee) : 0;
+
     return (
         <div className="text-white p-4 md:p-2 lg:p-0">
             <div className="h-full w-full m-auto scrollbar-hide max-w-[80rem]">
@@ -293,14 +306,15 @@ const MentorDashboard = () => {
                     <div className="flex flex-col gap-2 w-full lg:w-[46%]">
                         <PlayerStats rank={menteeDetails.tasks_completed} points={menteeDetails.total_points} />
                         <Badges />
-                        <PlayerProgress tasks={menteeDetails.tasks_completed} totaltasks={totaltask} />
+                        {/* Updated to use submitted tasks count instead of completed tasks */}
+                        <PlayerProgress tasks={submittedTasksCount} totaltasks={totaltask} />
                     </div>
                     <div className="flex flex-col gap-4 w-full lg:w-[50%]">
                         <div className="flex flex-col sm:flex-row gap-5 justify-between">
                             <div className="w-full sm:w-1/2">
                                 <UpcomingTask upcoming_tasks={getUpcomingMentorTasks()} />
                             </div>
-                            <div className="w-full sm:w-1/2">
+                            <div className="w-1/2">
                                 <ReviewedTask reviewed_tasks={getReviewedMentorTasks()} />
                             </div>
                         </div>
