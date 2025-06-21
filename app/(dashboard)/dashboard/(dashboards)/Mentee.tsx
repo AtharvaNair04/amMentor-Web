@@ -24,6 +24,27 @@ interface MenteeDetails {
     total_points: number;
 }
 
+interface Submission {
+    task_id: number;
+    status: string;
+}
+
+const normalizeStatus = (status: string): string => {
+    if (!status) return 'Not Started';
+    
+    const statusMap: { [key: string]: string } = {
+        'submitted': 'Submitted',
+        'approved': 'Reviewed',
+        'rejected': 'Reviewed',
+        'paused': 'Paused',
+        'in progress': 'In Progress',
+        'not started': 'Not Started'
+    };
+    
+    const normalizedKey = status.toLowerCase();
+    return statusMap[normalizedKey] || status;
+};
+
 const MenteeDashboard = () => {
     const router = useRouter();
     const [menteeDetails, setMenteeDetails] = useState<MenteeDetails>({
@@ -32,25 +53,97 @@ const MenteeDashboard = () => {
         tasks_completed: 0 
     });
     const [tasks, setTasks] = useState<Task[]>([]);
+    const [mySubmissions, setMySubmissions] = useState<Record<number, string>>({});
+    const [currentTask, setCurrentTask] = useState<Task | null>(null);
 
-    const getDummyStatus = (taskId: number): string => {
-        const statuses = ["Reviewed", "Submitted", "In Progress", "Not Started"];
-        return statuses[taskId % statuses.length];
+    const getUserEmail = (): string | null => {
+        return localStorage.getItem('email');
+    };
+
+    const isTaskUnlocked = (taskId: number): boolean => {
+        if (taskId <= 1) return true;
+        
+        const previousTaskId = taskId - 1;
+        const previousTask = tasks.find(task => task.id === previousTaskId);
+        
+        if (!previousTask) return false;
+        
+        if (previousTask.deadline === null) return true;
+        
+        const previousTaskStatus = mySubmissions[previousTaskId];
+        return previousTaskStatus === 'Submitted' || previousTaskStatus === 'Reviewed';
+    };
+
+    const getCurrentTask = (): Task | null => {
+        // Find the latest unlocked task that is not reviewed
+        const unlockedTasks = tasks.filter(task => isTaskUnlocked(task.id));
+        const currentTasks = unlockedTasks.filter(task => {
+            const status = mySubmissions[task.id] || 'Not Started';
+            return status !== 'Reviewed';
+        });
+        
+        // Return the latest (highest ID) current task
+        return currentTasks.length > 0 ? currentTasks[currentTasks.length - 1] : null;
     };
 
     const getFormattedTasks = (): string[][] => {
-        return tasks.map((task, index) => [
-            task.id.toString(),
-            task.title,
-            getDummyStatus(index)
-        ]);
+        return tasks.map((task) => {
+            const status = mySubmissions[task.id] || 'Not Started';
+            const unlocked = isTaskUnlocked(task.id);
+            
+            let displayStatus = status;
+            if (!unlocked) {
+                displayStatus = `🔒 ${status}`;
+            }
+            
+            return [task.id.toString(), task.title, displayStatus];
+        });
     };
 
-    const getUpcomingTasks = (): string[][] => 
-        getFormattedTasks().filter(task => task[2] === "Not Started");
+    const getUpcomingTasks = (): string[][] => {
+        const formattedTasks = getFormattedTasks();
+        return formattedTasks.filter(task => {
+            const status = task[2];
+            // Show locked tasks and not started unlocked tasks
+            return status.includes('🔒') || status === 'Not Started';
+        });
+    };
     
-    const getReviewedTasks = (): string[][] => 
-        getFormattedTasks().filter(task => task[2] === "Reviewed");
+    const getReviewedTasks = (): string[][] => {
+        const formattedTasks = getFormattedTasks();
+        return formattedTasks.filter(task => task[2] === 'Reviewed');
+    };
+
+    const fetchMySubmissions = async (tasksList: Task[], trackId: number) => {
+        const userEmail = getUserEmail();
+        if (!userEmail) return;
+        
+        const results: Record<number, string> = {};
+        for (const task of tasksList) {
+            try {
+                const res = await fetch(`https://amapi.amfoss.in/submissions/?email=${encodeURIComponent(userEmail)}&track_id=${trackId}`);
+                
+                if (res.ok) {
+                    const submissions: Submission[] = await res.json();
+                    const taskSubmission = submissions.find((s: Submission) => s.task_id === task.id);
+                    
+                    if (taskSubmission) {
+                        const rawStatus = taskSubmission.status;
+                        const normalizedStatus = normalizeStatus(rawStatus);
+                        results[task.id] = normalizedStatus;
+                    } else {
+                        results[task.id] = 'Not Started';
+                    }
+                } else {
+                    results[task.id] = 'Not Started';
+                }
+            } catch (error) {
+                console.error(`Error fetching submission for task ${task.id}:`, error);
+                results[task.id] = 'Not Started';
+            }
+        }
+        setMySubmissions(results);
+    };
 
     useEffect(() => {
         const fetchMenteeDetails = async () => {
@@ -95,6 +188,9 @@ const MenteeDashboard = () => {
                 
                 const tasksData: Task[] = await response.json();
                 setTasks(tasksData);
+                
+                // Fetch submissions after getting tasks
+                await fetchMySubmissions(tasksData, trackId);
             } catch (error) {
                 console.error('Error fetching tasks:', error);
                 router.push('/track');
@@ -104,6 +200,14 @@ const MenteeDashboard = () => {
         fetchMenteeDetails();
         fetchTasks();
     }, [router]);
+
+    // Update current task when submissions change
+    useEffect(() => {
+        if (tasks.length > 0 && Object.keys(mySubmissions).length > 0) {
+            const current = getCurrentTask();
+            setCurrentTask(current);
+        }
+    }, [tasks, mySubmissions]);
 
     return (
         <div className="text-white p-4 md:p-2 lg:p-0">
@@ -118,7 +222,10 @@ const MenteeDashboard = () => {
                     </Link>
                 </div>
                 <div className="flex justify-between mt-4 sm:mt-6 md:mt-10">
-                    <CurrentTask />
+                    <CurrentTask 
+                        task={currentTask}
+                        status={currentTask ? mySubmissions[currentTask.id] : undefined}
+                    />
                 </div>
                 <div className="flex flex-col lg:flex-row justify-between mt-4 sm:mt-6 md:mt-10 gap-6 lg:gap-0">
                     <div className="flex flex-col gap-6 md:gap-12 w-full lg:w-[48%]">

@@ -1,6 +1,4 @@
 'use client'
-import { useState } from "react";
-import MenteeCard from "@/app/components/layout/MenteeCard";
 
 interface TasksViewerProps {
     isMentor: boolean; 
@@ -11,23 +9,17 @@ interface TasksViewerProps {
     onMenteeClick: (taskId: string, menteeId: string) => void;
 }
 
-const TasksViewer = ({ isMentor, tasks, highted_task, mentees = [], onTaskClick, onMenteeClick }: TasksViewerProps) => {
-    const [expandedTaskIndex, setExpandedTaskIndex] = useState<number | null>(null);
-    
+const TasksViewer = ({ isMentor, tasks, highted_task, onTaskClick }: TasksViewerProps) => {
     const toggleExpand = (index: number) => {
         if (isMentor) {
-            setExpandedTaskIndex(expandedTaskIndex === index ? null : index);
+            // For mentors, since there's only one mentee (the selected one), go directly to review
+            const taskId = tasks[index][0];
+            onTaskClick(taskId);
         } else {
             // For mentees, directly open the review component
             const taskId = tasks[index][0];
             onTaskClick(taskId);
         }
-    };
-    
-    const handleMenteeClick = (taskIndex: number, menteeIndex: number) => {
-        const taskId = tasks[taskIndex][0];
-        const menteeEmail = mentees[taskIndex][menteeIndex][1];
-        onMenteeClick(taskId, menteeEmail);
     };
     
     return (
@@ -39,7 +31,7 @@ const TasksViewer = ({ isMentor, tasks, highted_task, mentees = [], onTaskClick,
                         className={`bg-deeper-grey rounded-xl transition-transform hover:scale-[103%] font-bold ${highted_task == i && !isMentor && "bg-primary-yellow"}`}
                     >
                         <div
-                            className={`grid grid-cols-3 gap-2 sm:gap-4 p-3 sm:p-4 items-center ${highted_task == i && !isMentor && "text-black"} text-sm sm:text-base`}
+                            className={`grid grid-cols-3 gap-2 sm:gap-4 p-3 sm:p-4 items-center ${highted_task == i && !isMentor && "text-black"} text-sm sm:text-base cursor-pointer`}
                             onClick={() => toggleExpand(i)}
                         >
                             {task.map((item, j) => (
@@ -55,17 +47,7 @@ const TasksViewer = ({ isMentor, tasks, highted_task, mentees = [], onTaskClick,
                                 </h1>
                             ))}
                         </div>
-                        {mentees.length > 0 && mentees[i] && mentees[i].length > 0 && expandedTaskIndex === i && (
-                            <div className="flex flex-wrap justify-evenly p-3 sm:p-4">
-                                {mentees[i].map((mentee, j) => (
-                                    <MenteeCard
-                                        key={j}
-                                        mentee={mentee}
-                                        onClick={() => handleMenteeClick(i, j)}
-                                    />
-                                ))}
-                            </div>
-                        )}
+                        {/* Mentee expansion is now removed since mentors go directly to review */}
                     </div>
                 ))}
             </div>

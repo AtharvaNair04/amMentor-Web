@@ -10,6 +10,18 @@ interface SubmissionReviewProps {
   menteeId?: string | null;
   onClose: () => void;
   trackId?: string | number | null;
+  allSubmissions?: Record<number, string>;
+  tasks?: Task[]; // Add tasks prop
+}
+
+interface Task {
+  id: number;
+  title: string;
+  description: string;
+  deadline?: number | null;
+  track_id: number;
+  task_no: number;
+  points: number;
 }
 
 interface SubmissionData {
@@ -22,7 +34,6 @@ interface SubmissionData {
   submission_text?: string;
 }
 
-// Define proper interface for submission API response
 interface SubmissionResponse {
   id: number;
   task_id: number;
@@ -34,12 +45,24 @@ interface SubmissionResponse {
   submission_text?: string;
 }
 
+interface TaskApiResponse {
+  id: number;
+  title: string;
+  description: string;
+  track_id: number;
+  task_no: number;
+  points: number;
+  deadline: number | null;
+}
+
 const SubmissionReview = ({
   isMentor,
   taskId,
   menteeId,
   onClose,
   trackId,
+  allSubmissions = {},
+  tasks = [], // Default to empty array
 }: SubmissionReviewProps) => {
   const [submissionText, setSubmissionText] = useState('');
   const [mentorNotes, setMentorNotes] = useState('');
@@ -47,6 +70,7 @@ const SubmissionReview = ({
   const [taskStatus, setTaskStatus] = useState('Not Started');
   const [submissionData, setSubmissionData] = useState<SubmissionData | null>(null);
   const [loading, setLoading] = useState(false);
+  const [localTasks, setLocalTasks] = useState<Task[]>(tasks); // Local state for tasks
 
   // Helper function to normalize status strings
   const normalizeStatus = (status: string): string => {
@@ -63,6 +87,78 @@ const SubmissionReview = ({
     
     const normalizedKey = status.toLowerCase();
     return statusMap[normalizedKey] || status;
+  };
+
+  // Fetch tasks if not provided
+  useEffect(() => {
+    const fetchTasks = async () => {
+      if (localTasks.length > 0) return; // Already have tasks
+
+      try {
+        // Get the correct trackId
+        let currentTrackId = trackId;
+        
+        if (!currentTrackId) {
+          if (isMentor) {
+            currentTrackId = 1;
+          } else {
+            const sessionTrack = sessionStorage.getItem('currentTrack');
+            if (sessionTrack) {
+              const trackData = JSON.parse(sessionTrack);
+              currentTrackId = trackData.id;
+            } else {
+              console.log('No track found in sessionStorage');
+              return;
+            }
+          }
+        }
+
+        const res = await fetch(`https://amapi.amfoss.in/tracks/${currentTrackId}/tasks`);
+        if (res.ok) {
+          const tasksData: TaskApiResponse[] = await res.json();
+          const formattedTasks: Task[] = tasksData.map(task => ({
+            id: task.id,
+            title: task.title,
+            description: task.description,
+            deadline: task.deadline,
+            track_id: task.track_id,
+            task_no: task.task_no,
+            points: task.points,
+          }));
+          setLocalTasks(formattedTasks);
+        }
+      } catch (error) {
+        console.error('Error fetching tasks:', error);
+      }
+    };
+
+    fetchTasks();
+  }, [trackId, isMentor, localTasks.length]);
+
+  // Check if the current task is unlocked based on previous task completion
+  const isTaskUnlocked = (currentTaskId: string): boolean => {
+    if (isMentor) return true; // Mentors can access any task
+    
+    const currentId = parseInt(currentTaskId);
+    if (currentId <= 1) return true; // First task is always unlocked
+    
+    const previousTaskId = currentId - 1;
+    const previousTask = localTasks.find(task => task.id === previousTaskId);
+    
+    // If previous task doesn't exist, don't unlock
+    if (!previousTask) {
+      return false;
+    }
+    
+    // CRITICAL FIX: If previous task has null deadline, current task is automatically unlocked
+    if (previousTask.deadline === null) {
+      console.log(`Task ${currentId} unlocked because previous task ${previousTaskId} has null deadline`);
+      return true;
+    }
+    
+    // Otherwise, check if previous task is completed
+    const previousTaskStatus = allSubmissions[previousTaskId];
+    return previousTaskStatus === 'Submitted' || previousTaskStatus === 'Reviewed';
   };
 
   // Fetch submission data when component mounts
@@ -162,7 +258,7 @@ const SubmissionReview = ({
     fetchSubmissionData();
   }, [taskId, trackId, menteeId, isMentor]);
 
-  const canEdit = !isMentor && (taskStatus === 'In Progress' || taskStatus === 'Not Started');
+  const currentTaskUnlocked = taskId ? isTaskUnlocked(taskId) : true;
   const isAlreadySubmitted = taskStatus === 'Submitted' || taskStatus === 'Reviewed';
 
   const submitTask = async () => {
@@ -190,9 +286,15 @@ const SubmissionReview = ({
       return;
     }
 
+    // Check if task is unlocked before submitting
+    if (!currentTaskUnlocked) {
+      alert('You must complete the previous task before submitting this one.');
+      return;
+    }
+
     const body = {
       track_id: Number(currentTrackId),
-      task_no: Number(taskId),
+      task_no: Number(taskId)-1,
       reference_link: submissionText.trim(),
       start_date: new Date().toISOString().split('T')[0],
       mentee_email: email,
@@ -258,10 +360,11 @@ const SubmissionReview = ({
             taskStatus={taskStatus}
             submissionText={submissionText}
             setSubmissionText={setSubmissionText}
-            canEdit={canEdit}
             isAlreadySubmitted={isAlreadySubmitted}
             trackId={trackId ?? undefined}
             onSubmitTask={submitTask}
+            allSubmissions={allSubmissions}
+            tasks={localTasks}
           />
 
           <MentorSection
