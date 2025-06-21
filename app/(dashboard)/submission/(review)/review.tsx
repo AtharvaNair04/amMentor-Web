@@ -361,13 +361,11 @@ const SubmissionReview = ({
             taskStatus={taskStatus}
             submissionText={submissionText}
             setSubmissionText={setSubmissionText}
-            canEdit={canEdit}
             isAlreadySubmitted={isAlreadySubmitted}
             trackId={trackId ?? undefined}
             onSubmitTask={submitTask}
             allSubmissions={allSubmissions}
-            isTaskUnlocked={currentTaskUnlocked}
-            tasks={localTasks} // Pass the tasks array
+            tasks={localTasks}
           />
 
           <MentorSection
