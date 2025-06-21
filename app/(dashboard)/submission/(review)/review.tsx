@@ -259,7 +259,6 @@ const SubmissionReview = ({
   }, [taskId, trackId, menteeId, isMentor]);
 
   const currentTaskUnlocked = taskId ? isTaskUnlocked(taskId) : true;
-  const canEdit = !isMentor && currentTaskUnlocked && (taskStatus === 'In Progress' || taskStatus === 'Not Started');
   const isAlreadySubmitted = taskStatus === 'Submitted' || taskStatus === 'Reviewed';
 
   const submitTask = async () => {
