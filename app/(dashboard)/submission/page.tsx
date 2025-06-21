@@ -218,8 +218,49 @@ const TasksPage = () => {
         setMySubmissions(results);
     }, []);
 
+    // Helper function to filter tasks based on status and current toggle
+    const getFilteredTasks = useCallback((): Task[] => {
+        const activeToggleIndex = toggles.findIndex(toggle => toggle);
+        
+        return tasks.filter((task) => {
+            let status: string;
+            
+            if (ismentor && selectedMentee && menteeSubmissions[selectedMentee]) {
+                // Mentor view - use selected mentee's status
+                status = menteeSubmissions[selectedMentee][task.id] || 'Not Started';
+            } else if (!ismentor && Object.keys(mySubmissions).length > 0) {
+                // Mentee view - use own status
+                status = mySubmissions[task.id] || 'Not Started';
+            } else {
+                status = 'Not Started';
+            }
+
+            // Filter based on active toggle
+            switch (activeToggleIndex) {
+                case 0: // All Tasks
+                    return true;
+                case 1: // Submitted (for mentees) / Reviewed (for mentors)
+                    if (ismentor) {
+                        return status === 'Reviewed';
+                    } else {
+                        return status === 'Submitted';
+                    }
+                case 2: // Reviewed (for mentees) / Submitted (for mentors)  
+                    if (ismentor) {
+                        return status === 'Submitted';
+                    } else {
+                        return status === 'Reviewed';
+                    }
+                default:
+                    return true;
+            }
+        });
+    }, [tasks, toggles, ismentor, selectedMentee, menteeSubmissions, mySubmissions]);
+
     const getFormattedTasks = useCallback((): string[][] => {
-        return tasks.map((task) => {
+        const filteredTasks = getFilteredTasks();
+        
+        return filteredTasks.map((task) => {
             if (ismentor && selectedMentee && menteeSubmissions[selectedMentee]) {
                 // Mentor view - show selected mentee's status
                 const status = menteeSubmissions[selectedMentee][task.id] || 'Not Started';
@@ -244,7 +285,7 @@ const TasksPage = () => {
                 return [task.id.toString(), task.title, ""];
             }
         });
-    }, [tasks, ismentor, selectedMentee, menteeSubmissions, mySubmissions, isTaskUnlocked]);
+    }, [getFilteredTasks, ismentor, selectedMentee, menteeSubmissions, mySubmissions, isTaskUnlocked]);
 
     const [toggledTasks, setToggledTasks] = useState<string[][]>([]);
 
@@ -305,15 +346,16 @@ const TasksPage = () => {
         }
     }, [selectedMentee, selectedMenteeEmail, menteesLoading, ismentor, tasks, fetchSelectedMenteeSubmissions]);
 
+    // Update toggledTasks whenever tasks, submissions, or toggles change
     useEffect(() => {
         if (tasks.length > 0) {
             const formattedTasks = getFormattedTasks();
-            console.log('Formatted tasks for mentee:', formattedTasks);
+            console.log('Formatted tasks for current toggle:', formattedTasks);
             console.log('My submissions:', mySubmissions);
-            console.log('Tasks with deadlines:', tasks.map(t => ({ id: t.id, title: t.title, deadline: t.deadline })));
+            console.log('Active toggle:', toggles.findIndex(t => t));
             setToggledTasks(formattedTasks);
         }
-    }, [tasks, getFormattedTasks, mySubmissions]);
+    }, [tasks, getFormattedTasks, mySubmissions, toggles]);
 
     // Simplified getFilteredMentees - now only returns data for the selected mentee
     const getFilteredMentees = useCallback((): string[][][] => {
@@ -333,7 +375,7 @@ const TasksPage = () => {
         const newToggles: boolean[] = [false, false, false];
         newToggles[index] = true;
         setToggles(newToggles);
-        setToggledTasks(getFormattedTasks());
+        // The useEffect will handle updating toggledTasks when toggles change
     }
 
     const handleTaskClick = (taskId: string) => {
