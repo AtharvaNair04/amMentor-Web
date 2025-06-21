@@ -21,15 +21,6 @@ export default function CurrentTask({ mentor = false, task, status }: CurrentTas
         return deadline;
     };
 
-    const getDaysLeft = (deadline: string | number | null): string => {
-        if (!deadline) return "No deadline";
-        if (typeof deadline === 'number') return `${deadline} days left`;
-        
-        // If deadline is a date string, you might want to calculate actual days left
-        // For now, returning a placeholder
-        return "Check deadline";
-    };
-
     const getButtonText = (): string => {
         if (mentor) {
             return status === 'Submitted' ? "Review Work" : "View Task";

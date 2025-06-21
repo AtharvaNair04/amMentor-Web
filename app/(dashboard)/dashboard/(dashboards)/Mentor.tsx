@@ -5,7 +5,7 @@ import CurrentTask from "../(tasks)/CurrentTask";
 import Badges from "../(user)/Badges";
 import PlayerProgress from "../(user)/PlayerProgress";
 import PlayerStats from "../(user)/PlayerStats";
-import { JSX, useEffect, useMemo, useState } from 'react';
+import { JSX, useEffect, useMemo, useState, useCallback } from 'react';
 
 interface Task {
     track_id: number;
@@ -63,12 +63,11 @@ const MentorDashboard = () => {
     });
     const [tasks, setTasks] = useState<Task[]>([]);
     const [totaltask, settotaltask] = useState(0);
-    const [mentees, setMentees] = useState<Mentee[]>([]);
     const [menteeSubmissions, setMenteeSubmissions] = useState<Record<string, Record<number, string>>>({});
     const [currentTask, setCurrentTask] = useState<Task | null>(null);
     const menteeOptions = useMemo<JSX.Element[]>(() => [], []);
 
-    const getCurrentTaskForMentee = (menteeName: string): Task | null => {
+    const getCurrentTaskForMentee = useCallback((menteeName: string): Task | null => {
         if (!tasks.length || !menteeSubmissions[menteeName]) return null;
         
         // Find submitted tasks for this mentee
@@ -79,7 +78,7 @@ const MentorDashboard = () => {
         
         // Return the earliest (lowest ID) submitted task
         return submittedTasks.length > 0 ? submittedTasks[0] : null;
-    };
+    }, [tasks, menteeSubmissions]);
 
     const getFormattedTasksForMentee = (menteeName: string): string[][] => {
         if (!menteeSubmissions[menteeName]) return [];
@@ -198,7 +197,6 @@ const MentorDashboard = () => {
                     throw new Error("Failed to fetch Mentees!");
                 }
                 const response: Mentees = await data.json();
-                setMentees(response.mentees);
                 
                 // Update mentee options
                 menteeOptions.splice(0, menteeOptions.length);
@@ -251,7 +249,7 @@ const MentorDashboard = () => {
         };
 
         initData();
-    }, [menteeOptions]);
+    }, [menteeOptions, selectedMentee]);
 
     // Fetch mentee details when selected mentee changes
     useEffect(() => {
@@ -266,7 +264,7 @@ const MentorDashboard = () => {
             const current = getCurrentTaskForMentee(selectedMentee);
             setCurrentTask(current);
         }
-    }, [tasks, menteeSubmissions, selectedMentee]);
+    }, [tasks, menteeSubmissions, selectedMentee, getCurrentTaskForMentee]);
 
     return (
         <div className="text-white p-4 md:p-2 lg:p-0">

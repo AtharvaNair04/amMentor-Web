@@ -7,13 +7,11 @@ interface TaskDetailsProps {
   taskStatus: string;
   submissionText: string;
   setSubmissionText: (text: string) => void;
-  canEdit: boolean;
   isAlreadySubmitted: boolean;
   trackId?: string | number;
   onSubmitTask: () => void;
   // New props for sequential task logic
   allSubmissions?: Record<number, string>;
-  isTaskUnlocked?: boolean;
   tasks?: Task[];
 }
 
@@ -51,12 +49,10 @@ const TaskDetails = ({
   taskStatus,
   submissionText,
   setSubmissionText,
-  canEdit,
   isAlreadySubmitted,
   trackId,
   onSubmitTask,
   allSubmissions = {},
-  isTaskUnlocked = true,
   tasks = [],
 }: TaskDetailsProps) => {
   const [task, setTask] = useState<Task | null>(null);
@@ -115,7 +111,7 @@ const TaskDetails = ({
     return () => clearInterval(interval);
   }, [startDate, task?.deadline]);
 
-  // FIXED: Use the same logic as the main page for task unlocking
+  // Use the same logic as the main page for task unlocking
   const isCurrentTaskUnlocked = (currentTaskId: string): boolean => {
     if (isMentor) return true; // Mentors can access any task
     
@@ -311,12 +307,12 @@ const TaskDetails = ({
     fetchTask();
   }, [trackId, taskId]);
 
-  // FIXED: Use the corrected unlock logic instead of the passed prop
+  // Use the corrected unlock logic
   const taskUnlocked = taskId ? isCurrentTaskUnlocked(taskId) : true;
   const canStartTask = !isMentor && taskUnlocked && !hasStarted && (taskStatus === 'Not Started');
   const showLockedMessage = !isMentor && !taskUnlocked && taskStatus === 'Not Started';
   
-  // FIXED: Update canEdit logic to use the corrected unlock status
+  // Update canEdit logic to use the corrected unlock status
   const canEditTask = !isMentor && taskUnlocked && (taskStatus === 'In Progress' || taskStatus === 'Not Started') && hasStarted;
 
   // Calculate days remaining for display
@@ -493,12 +489,12 @@ const TaskDetails = ({
             {!hasStarted && taskUnlocked && !showLockedMessage && (
               <div className="mb-4 p-3 bg-yellow-900 bg-opacity-30 border border-yellow-600 rounded-md">
                 <p className="text-yellow-300 text-sm">
-                  💡 Click "START TASK" above to begin working on this task and track your progress!
+                  💡 Click &quot;START TASK&quot; above to begin working on this task and track your progress!
                 </p>
               </div>
             )}
 
-            {/* FIXED: Use corrected canEdit logic and task unlock status */}
+            {/* Use corrected canEdit logic and task unlock status */}
             {canEditTask ? (
               <>
                 <textarea
