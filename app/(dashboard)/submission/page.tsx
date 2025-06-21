@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import TasksViewer from "./(tasks)/submissionitems";
 import { useAuth } from "@/app/context/authcontext";
+import { useMentee } from "@/app/context/menteeContext";
 import { useRouter } from 'next/navigation';
 
 import SubmissionReview from "./(review)/review";
@@ -20,11 +21,6 @@ interface Task {
 interface Submission {
     task_id: number;
     status: string;
-}
-
-interface Mentee {
-    name: string;
-    email: string;
 }
 
 const normalizeStatus = (status: string): string => {
@@ -45,6 +41,12 @@ const normalizeStatus = (status: string): string => {
 
 const TasksPage = () => {
     const { userRole, isLoggedIn } = useAuth();
+    const { 
+        selectedMentee, 
+        selectedMenteeEmail, 
+        mentees, 
+        isLoading: menteesLoading 
+    } = useMentee();
     const router = useRouter();
     const [toggles, setToggles] = useState([true, false, false]);
     const [showReview, setShowReview] = useState(false);
@@ -52,7 +54,6 @@ const TasksPage = () => {
     const [selectedMenteeId, setSelectedMenteeId] = useState<string | null>(null);
     const [tasks, setTasks] = useState<Task[]>([]);
     const [loading, setLoading] = useState(true);
-    const [mentees, setMentees] = useState<Mentee[]>([]);
     const [menteeSubmissions, setMenteeSubmissions] = useState<Record<string, Record<number, string>>>({});
     const [mySubmissions, setMySubmissions] = useState<Record<number, string>>({});
     const [currentTrack, setCurrentTrack] = useState<{id: number; name: string} | null>(null);
@@ -122,54 +123,48 @@ const TasksPage = () => {
         return data;
     }, [userRole, router]);
 
-    const fetchMentees = useCallback(async (): Promise<Mentee[]> => {
-        const mentorEmail = 'atharvanair04@gmail.com';
-        const res = await fetch(`https://amapi.amfoss.in/mentors/${encodeURIComponent(mentorEmail)}/mentees`);
-        const data = await res.json();
-        setMentees(data.mentees);
-        return data.mentees;
-    }, []);
+    // Updated fetchMenteeSubmissions to use only the selected mentee
+    const fetchSelectedMenteeSubmissions = useCallback(async (trackId: number, tasksList: Task[]) => {
+        if (!selectedMentee || !selectedMenteeEmail) {
+            console.log('No selected mentee, skipping submission fetch');
+            return;
+        }
 
-    // Optimized fetchMenteeSubmissions - fetch once per mentee per track
-    const fetchMenteeSubmissions = useCallback(async (menteesList: Mentee[], trackId: number, tasksList: Task[]) => {
         const results: Record<string, Record<number, string>> = {};
+        results[selectedMentee] = {};
         
-        for (const mentee of menteesList) {
-            results[mentee.name] = {};
+        try {
+            // Single API call for the selected mentee
+            const res = await fetch(`https://amapi.amfoss.in/submissions/?email=${encodeURIComponent(selectedMenteeEmail)}&track_id=${trackId}`);
             
-            try {
-                // Single API call per mentee for the entire track
-                const res = await fetch(`https://amapi.amfoss.in/submissions/?email=${encodeURIComponent(mentee.email)}&track_id=${trackId}`);
+            if (res.ok) {
+                const submissions: Submission[] = await res.json();
+                console.log(`Fetched ${submissions.length} submissions for ${selectedMentee} in track ${trackId}`);
                 
-                if (res.ok) {
-                    const submissions: Submission[] = await res.json();
-                    console.log(`Fetched ${submissions.length} submissions for ${mentee.name} in track ${trackId}`);
-                    
-                    // Map all submissions for this mentee to their respective tasks
-                    for (const task of tasksList) {
-                        const taskSubmission = submissions.find((s: Submission) => s.task_id === task.id);
-                        const rawStatus = taskSubmission?.status || 'Not Started';
-                        const normalizedStatus = normalizeStatus(rawStatus);
-                        results[mentee.name][task.id] = normalizedStatus;
-                    }
-                } else {
-                    console.error(`Failed to fetch submissions for ${mentee.name}:`, res.status);
-                    // Set all tasks to 'Not Started' if API call fails
-                    for (const task of tasksList) {
-                        results[mentee.name][task.id] = 'Not Started';
-                    }
-                }
-            } catch (error) {
-                console.error(`Error fetching submissions for ${mentee.name}:`, error);
-                // Set all tasks to 'Not Started' if error occurs
+                // Map all submissions for this mentee to their respective tasks
                 for (const task of tasksList) {
-                    results[mentee.name][task.id] = 'Not Started';
+                    const taskSubmission = submissions.find((s: Submission) => s.task_id === task.id);
+                    const rawStatus = taskSubmission?.status || 'Not Started';
+                    const normalizedStatus = normalizeStatus(rawStatus);
+                    results[selectedMentee][task.id] = normalizedStatus;
                 }
+            } else {
+                console.error(`Failed to fetch submissions for ${selectedMentee}:`, res.status);
+                // Set all tasks to 'Not Started' if API call fails
+                for (const task of tasksList) {
+                    results[selectedMentee][task.id] = 'Not Started';
+                }
+            }
+        } catch (error) {
+            console.error(`Error fetching submissions for ${selectedMentee}:`, error);
+            // Set all tasks to 'Not Started' if error occurs
+            for (const task of tasksList) {
+                results[selectedMentee][task.id] = 'Not Started';
             }
         }
         
         setMenteeSubmissions(results);
-    }, []);
+    }, [selectedMentee, selectedMenteeEmail]);
 
     // Optimized fetchMySubmissions - single API call per track
     const fetchMySubmissions = useCallback(async (trackId: number, tasksList: Task[]) => {
@@ -226,17 +221,10 @@ const TasksPage = () => {
 
     const getFormattedTasks = useCallback((): string[][] => {
         return tasks.map((task) => {
-            if (ismentor && mentees.length > 0 && Object.keys(menteeSubmissions).length > 0) {
-                // Mentor view - show mentee progress summary
-                const counts: Record<string, number> = {};
-                for (const mentee of mentees) {
-                    const status = menteeSubmissions[mentee.name]?.[task.id] || 'Not Started';
-                    counts[status] = (counts[status] || 0) + 1;
-                }
-                const statusSummary = Object.entries(counts)
-                    .map(([status, count]) => `${status} (${count})`)
-                    .join(', ');
-                return [task.id.toString(), task.title, statusSummary];
+            if (ismentor && selectedMentee && menteeSubmissions[selectedMentee]) {
+                // Mentor view - show selected mentee's status
+                const status = menteeSubmissions[selectedMentee][task.id] || 'Not Started';
+                return [task.id.toString(), task.title, status];
             } else if (!ismentor && Object.keys(mySubmissions).length > 0) {
                 // Mentee view - show own progress with lock status
                 const status = mySubmissions[task.id] || 'Not Started';
@@ -257,7 +245,7 @@ const TasksPage = () => {
                 return [task.id.toString(), task.title, ""];
             }
         });
-    }, [tasks, ismentor, mentees, menteeSubmissions, mySubmissions, isTaskUnlocked]);
+    }, [tasks, ismentor, selectedMentee, menteeSubmissions, mySubmissions, isTaskUnlocked]);
 
     const [toggledTasks, setToggledTasks] = useState<string[][]>([]);
 
@@ -290,9 +278,10 @@ const TasksPage = () => {
                 }
 
                 if (ismentor) {
-                    const fetchedMentees = await fetchMentees();
-                    // Pass trackId and tasks to optimized function
-                    await fetchMenteeSubmissions(fetchedMentees, trackId, fetchedTasks);
+                    // Wait for mentees to load, then fetch submissions for selected mentee
+                    if (!menteesLoading && selectedMentee && selectedMenteeEmail) {
+                        await fetchSelectedMenteeSubmissions(trackId, fetchedTasks);
+                    }
                 } else {
                     // Pass trackId and tasks to optimized function
                     if (trackId) {
@@ -307,7 +296,15 @@ const TasksPage = () => {
         };
 
         init();
-    }, [isLoggedIn, router, ismentor, fetchTasks, fetchMentees, fetchMenteeSubmissions, fetchMySubmissions]);
+    }, [isLoggedIn, router, ismentor, fetchTasks, fetchSelectedMenteeSubmissions, fetchMySubmissions, menteesLoading, selectedMentee, selectedMenteeEmail]);
+
+    // Separate effect to handle mentee selection changes
+    useEffect(() => {
+        if (ismentor && !menteesLoading && selectedMentee && selectedMenteeEmail && tasks.length > 0) {
+            const trackId = 1; // Mentors use track 1
+            fetchSelectedMenteeSubmissions(trackId, tasks);
+        }
+    }, [selectedMentee, selectedMenteeEmail, menteesLoading, ismentor, tasks, fetchSelectedMenteeSubmissions]);
 
     useEffect(() => {
         if (tasks.length > 0) {
@@ -319,17 +316,17 @@ const TasksPage = () => {
         }
     }, [tasks, getFormattedTasks, mySubmissions]);
 
+    // Simplified getFilteredMentees - now only returns data for the selected mentee
     const getFilteredMentees = useCallback((): string[][][] => {
-        if (!ismentor || tasks.length === 0 || mentees.length === 0) return [];
+        if (!ismentor || tasks.length === 0 || !selectedMentee) return [];
 
         return toggledTasks.map(([taskIdStr]) => {
             const taskId = parseInt(taskIdStr);
-            return mentees.map(mentee => {
-                const status = menteeSubmissions[mentee.name]?.[taskId] || 'Not Started';
-                return [mentee.name, mentee.email, "-", status];
-            });
+            const status = menteeSubmissions[selectedMentee]?.[taskId] || 'Not Started';
+            // Return array with single mentee (the selected one)
+            return [[selectedMentee, selectedMenteeEmail || '', "-", status]];
         });
-    }, [ismentor, mentees, toggledTasks, menteeSubmissions, tasks]);
+    }, [ismentor, selectedMentee, selectedMenteeEmail, toggledTasks, menteeSubmissions, tasks]);
 
     const CurrentTaskIndex: number = 0; 
 
@@ -341,8 +338,13 @@ const TasksPage = () => {
     }
 
     const handleTaskClick = (taskId: string) => {
-        // For mentees, check if the task is unlocked before allowing access
-        if (!ismentor) {
+        if (ismentor) {
+            // For mentors, go directly to review with the selected mentee
+            setSelectedTaskId(taskId);
+            setSelectedMenteeId(selectedMenteeEmail);
+            setShowReview(true);
+        } else {
+            // For mentees, check if the task is unlocked before allowing access
             const taskIdNum = parseInt(taskId);
             if (!isTaskUnlocked(taskIdNum)) {
                 const previousTaskId = taskIdNum - 1;
@@ -356,13 +358,15 @@ const TasksPage = () => {
                 }
                 return;
             }
+            
+            setSelectedTaskId(taskId);
+            setShowReview(true);
         }
-        
-        setSelectedTaskId(taskId);
-        setShowReview(true);
     };
 
     const handleMenteeClick = (taskId: string, menteeEmail: string) => {
+        // This function is kept for compatibility but shouldn't be used for mentors anymore
+        // since they go directly to review via handleTaskClick
         setSelectedTaskId(taskId);
         setSelectedMenteeId(menteeEmail);
         setShowReview(true);
@@ -381,10 +385,25 @@ const TasksPage = () => {
         return null; 
     }
 
-    if (loading) {
+    if (loading || (ismentor && menteesLoading)) {
         return (
             <div className="text-white flex justify-center items-center h-screen">
-                <div className="text-xl">Loading tasks...</div>
+                <div className="text-xl">Loading...</div>
+            </div>
+        );
+    }
+
+    // For mentors, show message if no mentee is selected
+    if (ismentor && !selectedMentee) {
+        return (
+            <div className="text-white flex flex-col justify-center items-center h-screen">
+                <div className="text-xl mb-4">Please select a mentee from the dashboard first</div>
+                <button 
+                    onClick={() => router.push('/dashboard')}
+                    className="bg-yellow-400 text-black px-4 py-2 rounded-lg hover:bg-yellow-500"
+                >
+                    Go to Dashboard
+                </button>
             </div>
         );
     }
@@ -433,6 +452,21 @@ const TasksPage = () => {
                                 className="text-sm text-gray-400 hover:text-yellow-400 underline"
                             >
                                 Change Track
+                            </button>
+                        </div>
+                    )}
+
+                    {/* Show selected mentee info for mentors */}
+                    {ismentor && selectedMentee && (
+                        <div className="text-center mb-4">
+                            <div className="text-yellow-400 text-lg">
+                                Viewing submissions for: {selectedMentee}
+                            </div>
+                            <button 
+                                onClick={() => router.push('/dashboard')}
+                                className="text-sm text-gray-400 hover:text-yellow-400 underline"
+                            >
+                                Change Mentee
                             </button>
                         </div>
                     )}

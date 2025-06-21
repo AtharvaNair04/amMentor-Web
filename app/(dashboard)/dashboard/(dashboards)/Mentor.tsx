@@ -6,6 +6,7 @@ import Badges from "../(user)/Badges";
 import PlayerProgress from "../(user)/PlayerProgress";
 import PlayerStats from "../(user)/PlayerStats";
 import { JSX, useEffect, useMemo, useState, useCallback } from 'react';
+import { useMentee } from "@/app/context/menteeContext";
 
 interface Task {
     track_id: number;
@@ -17,11 +18,6 @@ interface Task {
     id: number;
 }
 
-interface Mentees {
-    mentor_email: string;
-    mentees: { name: string, email: string }[]
-}
-
 interface MenteeDetails {
     tasks_completed: number;
     mentee_name: string;
@@ -31,11 +27,6 @@ interface MenteeDetails {
 interface Submission {
     task_id: number;
     status: string;
-}
-
-interface Mentee {
-    name: string;
-    email: string;
 }
 
 const normalizeStatus = (status: string): string => {
@@ -55,7 +46,14 @@ const normalizeStatus = (status: string): string => {
 };
 
 const MentorDashboard = () => {
-    const [selectedMentee, setSelectedMentee] = useState("Mentee 1");
+    const { 
+        selectedMentee, 
+        selectedMenteeEmail, 
+        mentees, 
+        setSelectedMentee, 
+        isLoading: menteesLoading 
+    } = useMentee();
+
     const [menteeDetails, setMenteeDetails] = useState<MenteeDetails>({
         mentee_name: "temp",
         total_points: 0,
@@ -65,7 +63,13 @@ const MentorDashboard = () => {
     const [totaltask, settotaltask] = useState(0);
     const [menteeSubmissions, setMenteeSubmissions] = useState<Record<string, Record<number, string>>>({});
     const [currentTask, setCurrentTask] = useState<Task | null>(null);
-    const menteeOptions = useMemo<JSX.Element[]>(() => [], []);
+
+    // Generate mentee options from context
+    const menteeOptions = useMemo<JSX.Element[]>(() => {
+        return mentees.map((mentee, index) => (
+            <option key={index} value={mentee.name}>{mentee.name}</option>
+        ));
+    }, [mentees]);
 
     // Calculate submitted tasks count for a mentee
     const getSubmittedTasksCount = useCallback((menteeName: string): number => {
@@ -100,7 +104,7 @@ const MentorDashboard = () => {
     };
 
     const getUpcomingMentorTasks = (): string[][] => {
-        if (!selectedMentee || selectedMentee === "Mentee 1") return [];
+        if (!selectedMentee) return [];
         
         const formattedTasks = getFormattedTasksForMentee(selectedMentee);
         return formattedTasks.filter(task => {
@@ -110,59 +114,69 @@ const MentorDashboard = () => {
     };
     
     const getReviewedMentorTasks = (): string[][] => {
-        if (!selectedMentee || selectedMentee === "Mentee 1") return [];
+        if (!selectedMentee) return [];
         
         const formattedTasks = getFormattedTasksForMentee(selectedMentee);
         return formattedTasks.filter(task => task[2] === 'Reviewed');
     };
 
-    const fetchMenteeSubmissions = async (menteesList: Mentee[], tasksList: Task[]) => {
-        const results: Record<string, Record<number, string>> = {};
-        
-        // Group tasks by track_id to minimize API calls
-        const tasksByTrack: Record<number, Task[]> = {};
-        tasksList.forEach(task => {
-            if (!tasksByTrack[task.track_id]) {
-                tasksByTrack[task.track_id] = [];
-            }
-            tasksByTrack[task.track_id].push(task);
-        });
+    const [menteeFullSubmissions, setMenteeFullSubmissions] = useState<Record<string, any[]>>({});
 
-        for (const mentee of menteesList) {
-            results[mentee.name] = {};
-            
-            // Fetch submissions per track instead of per task
-            for (const [trackId, tasksInTrack] of Object.entries(tasksByTrack)) {
-                try {
-                    const res = await fetch(`https://amapi.amfoss.in/submissions/?email=${encodeURIComponent(mentee.email)}&track_id=${trackId}`);
+// Update the fetchMenteeSubmissions function to store full submission data
+const fetchMenteeSubmissions = async (menteesList: any[], tasksList: Task[]) => {
+    const statusResults: Record<string, Record<number, string>> = {};
+    const fullSubmissionsResults: Record<string, any[]> = {};
+    
+    // Group tasks by track_id to minimize API calls
+    const tasksByTrack: Record<number, Task[]> = {};
+    tasksList.forEach(task => {
+        if (!tasksByTrack[task.track_id]) {
+            tasksByTrack[task.track_id] = [];
+        }
+        tasksByTrack[task.track_id].push(task);
+    });
+
+    for (const mentee of menteesList) {
+        statusResults[mentee.name] = {};
+        fullSubmissionsResults[mentee.name] = [];
+        
+        // Fetch submissions per track instead of per task
+        for (const [trackId, tasksInTrack] of Object.entries(tasksByTrack)) {
+            try {
+                const res = await fetch(`https://amapi.amfoss.in/submissions/?email=${encodeURIComponent(mentee.email)}&track_id=${trackId}`);
+                
+                if (res.ok) {
+                    const submissions: any[] = await res.json();
                     
-                    if (res.ok) {
-                        const submissions: Submission[] = await res.json();
-                        
-                        // Process all tasks for this track
-                        tasksInTrack.forEach(task => {
-                            const taskSubmission = submissions.find((s: Submission) => s.task_id === task.id);
-                            const rawStatus = taskSubmission?.status || 'Not Started';
-                            const normalizedStatus = normalizeStatus(rawStatus);
-                            results[mentee.name][task.id] = normalizedStatus;
-                        });
-                    } else {
-                        // If API call fails, set all tasks in this track as 'Not Started'
-                        tasksInTrack.forEach(task => {
-                            results[mentee.name][task.id] = 'Not Started';
-                        });
-                    }
-                } catch (error) {
-                    console.error(`Error fetching submissions for ${mentee.name}, track ${trackId}:`, error);
-                    // Set all tasks in this track as 'Not Started' on error
+                    // Store full submissions for feedback
+                    fullSubmissionsResults[mentee.name].push(...submissions);
+                    
+                    // Process all tasks for this track for status
                     tasksInTrack.forEach(task => {
-                        results[mentee.name][task.id] = 'Not Started';
+                        const taskSubmission = submissions.find((s: any) => s.task_id === task.id);
+                        const rawStatus = taskSubmission?.status || 'Not Started';
+                        const normalizedStatus = normalizeStatus(rawStatus);
+                        statusResults[mentee.name][task.id] = normalizedStatus;
+                    });
+                } else {
+                    // If API call fails, set all tasks in this track as 'Not Started'
+                    tasksInTrack.forEach(task => {
+                        statusResults[mentee.name][task.id] = 'Not Started';
                     });
                 }
+            } catch (error) {
+                console.error(`Error fetching submissions for ${mentee.name}, track ${trackId}:`, error);
+                // Set all tasks in this track as 'Not Started' on error
+                tasksInTrack.forEach(task => {
+                    statusResults[mentee.name][task.id] = 'Not Started';
+                });
             }
         }
-        setMenteeSubmissions(results);
-    };
+    }
+    
+    setMenteeSubmissions(statusResults);
+    setMenteeFullSubmissions(fullSubmissionsResults);
+};
 
     const fetchMenteeDetails = async (menteeName: string) => {
         try {
@@ -198,72 +212,44 @@ const MentorDashboard = () => {
         }
     };
 
-    useEffect(() => {
-        const fetchMentees = async () => {
-            try {
-                const mentorEmail = localStorage.getItem("email") || 'atharvanair04@gmail.com';
-                const data = await fetch(`https://amapi.amfoss.in/mentors/${encodeURIComponent(mentorEmail)}/mentees`);
-                if (!data.ok) {
-                    throw new Error("Failed to fetch Mentees!");
-                }
-                const response: Mentees = await data.json();
-                
-                // Update mentee options
-                menteeOptions.splice(0, menteeOptions.length);
-                response.mentees.forEach((element, index) => {
-                    menteeOptions.push(<option key={index} value={element.name}>{element.name}</option>);
-                });
-                
-                // Set first mentee as selected if no selection
-                if (response.mentees.length > 0 && selectedMentee === "Mentee 1") {
-                    setSelectedMentee(response.mentees[0].name);
-                }
-                
-                return response.mentees;
-            } catch (error) {
-                console.error('Error fetching mentees:', error);
-                return [];
-            }
-        };
-
-        const fetchTasks = async () => {
-            try {
-                const trackId = 1; // Mentors use track 1
-                
-                const response = await fetch(`https://amapi.amfoss.in/tracks/${trackId}/tasks`);
-                
-                if (!response.ok) {
-                    throw new Error('Failed to fetch tasks');
-                }
-                
-                const tasksData: Task[] = await response.json();
-                setTasks(tasksData);
-                settotaltask(tasksData.length);
-                
-                return tasksData;
-            } catch (error) {
-                console.error('Error fetching tasks:', error);
-                return [];
-            }
-        };
-
-        const initData = async () => {
-            const [fetchedMentees, fetchedTasks] = await Promise.all([
-                fetchMentees(),
-                fetchTasks()
-            ]);
+    const fetchTasks = async () => {
+        try {
+            const trackId = 1; // Mentors use track 1
             
-            if (fetchedMentees.length > 0 && fetchedTasks.length > 0) {
-                await fetchMenteeSubmissions(fetchedMentees, fetchedTasks);
+            const response = await fetch(`https://amapi.amfoss.in/tracks/${trackId}/tasks`);
+            
+            if (!response.ok) {
+                throw new Error('Failed to fetch tasks');
+            }
+            
+            const tasksData: Task[] = await response.json();
+            setTasks(tasksData);
+            settotaltask(tasksData.length);
+            
+            return tasksData;
+        } catch (error) {
+            console.error('Error fetching tasks:', error);
+            return [];
+        }
+    };
+
+    // Fetch tasks and submissions when mentees are loaded
+    useEffect(() => {
+        const initData = async () => {
+            if (!menteesLoading && mentees.length > 0) {
+                const fetchedTasks = await fetchTasks();
+                if (fetchedTasks.length > 0) {
+                    await fetchMenteeSubmissions(mentees, fetchedTasks);
+                }
             }
         };
 
         initData();
-    }, [menteeOptions, selectedMentee]);
+    }, [menteesLoading, mentees]);
 
     // Fetch mentee details when selected mentee changes
     useEffect(() => {
-        if (selectedMentee && selectedMentee !== "Mentee 1") {
+        if (selectedMentee) {
             fetchMenteeDetails(selectedMentee);
         }
     }, [selectedMentee]);
@@ -279,6 +265,14 @@ const MentorDashboard = () => {
     // Calculate submitted tasks count for the selected mentee
     const submittedTasksCount = selectedMentee ? getSubmittedTasksCount(selectedMentee) : 0;
 
+    if (menteesLoading) {
+        return (
+            <div className="text-white flex justify-center items-center h-screen">
+                <div className="text-xl">Loading mentees...</div>
+            </div>
+        );
+    }
+
     return (
         <div className="text-white p-4 md:p-2 lg:p-0">
             <div className="h-full w-full m-auto scrollbar-hide max-w-[80rem]">
@@ -289,7 +283,7 @@ const MentorDashboard = () => {
                     </div>
                     <select 
                         className="bg-deeper-grey rounded-lg text-primary-yellow px-3 py-2 sm:px-4 md:px-6 md:py-3 w-full sm:w-auto mb-6 sm:mb-0"
-                        value={selectedMentee}
+                        value={selectedMentee || ''}
                         onChange={(e) => setSelectedMentee(e.target.value)}
                     >
                         {menteeOptions}
@@ -318,7 +312,11 @@ const MentorDashboard = () => {
                                 <ReviewedTask reviewed_tasks={getReviewedMentorTasks()} />
                             </div>
                         </div>
-                        <FeedbackProvided />
+                        <FeedbackProvided 
+    selectedMentee={selectedMentee}
+    menteeSubmissions={menteeFullSubmissions}
+    tasks={tasks}
+/>
                     </div>
                 </div>
             </div>
