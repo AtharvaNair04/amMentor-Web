@@ -24,9 +24,18 @@ interface MenteeDetails {
     total_points: number;
 }
 
-interface Submission {
+interface SubmissionData {
+    id: number;
     task_id: number;
+    task_no: number;
+    task_name: string;
     status: string;
+    mentor_feedback?: string;
+    feedback?: string;
+    submitted_at?: string;
+    reviewed_at?: string;
+    approved_at?: string;
+    // Add other submission properties as needed
 }
 
 const normalizeStatus = (status: string): string => {
@@ -48,7 +57,6 @@ const normalizeStatus = (status: string): string => {
 const MentorDashboard = () => {
     const { 
         selectedMentee, 
-        selectedMenteeEmail, 
         mentees, 
         setSelectedMentee, 
         isLoading: menteesLoading 
@@ -120,63 +128,63 @@ const MentorDashboard = () => {
         return formattedTasks.filter(task => task[2] === 'Reviewed');
     };
 
-    const [menteeFullSubmissions, setMenteeFullSubmissions] = useState<Record<string, any[]>>({});
+    const [menteeFullSubmissions, setMenteeFullSubmissions] = useState<Record<string, SubmissionData[]>>({});
 
-// Update the fetchMenteeSubmissions function to store full submission data
-const fetchMenteeSubmissions = async (menteesList: any[], tasksList: Task[]) => {
-    const statusResults: Record<string, Record<number, string>> = {};
-    const fullSubmissionsResults: Record<string, any[]> = {};
-    
-    // Group tasks by track_id to minimize API calls
-    const tasksByTrack: Record<number, Task[]> = {};
-    tasksList.forEach(task => {
-        if (!tasksByTrack[task.track_id]) {
-            tasksByTrack[task.track_id] = [];
-        }
-        tasksByTrack[task.track_id].push(task);
-    });
-
-    for (const mentee of menteesList) {
-        statusResults[mentee.name] = {};
-        fullSubmissionsResults[mentee.name] = [];
+    // Update the fetchMenteeSubmissions function to store full submission data
+    const fetchMenteeSubmissions = async (menteesList: { name: string; email: string }[], tasksList: Task[]) => {
+        const statusResults: Record<string, Record<number, string>> = {};
+        const fullSubmissionsResults: Record<string, SubmissionData[]> = {};
         
-        // Fetch submissions per track instead of per task
-        for (const [trackId, tasksInTrack] of Object.entries(tasksByTrack)) {
-            try {
-                const res = await fetch(`https://amapi.amfoss.in/submissions/?email=${encodeURIComponent(mentee.email)}&track_id=${trackId}`);
-                
-                if (res.ok) {
-                    const submissions: any[] = await res.json();
+        // Group tasks by track_id to minimize API calls
+        const tasksByTrack: Record<number, Task[]> = {};
+        tasksList.forEach(task => {
+            if (!tasksByTrack[task.track_id]) {
+                tasksByTrack[task.track_id] = [];
+            }
+            tasksByTrack[task.track_id].push(task);
+        });
+
+        for (const mentee of menteesList) {
+            statusResults[mentee.name] = {};
+            fullSubmissionsResults[mentee.name] = [];
+            
+            // Fetch submissions per track instead of per task
+            for (const [trackId, tasksInTrack] of Object.entries(tasksByTrack)) {
+                try {
+                    const res = await fetch(`https://amapi.amfoss.in/submissions/?email=${encodeURIComponent(mentee.email)}&track_id=${trackId}`);
                     
-                    // Store full submissions for feedback
-                    fullSubmissionsResults[mentee.name].push(...submissions);
-                    
-                    // Process all tasks for this track for status
-                    tasksInTrack.forEach(task => {
-                        const taskSubmission = submissions.find((s: any) => s.task_id === task.id);
-                        const rawStatus = taskSubmission?.status || 'Not Started';
-                        const normalizedStatus = normalizeStatus(rawStatus);
-                        statusResults[mentee.name][task.id] = normalizedStatus;
-                    });
-                } else {
-                    // If API call fails, set all tasks in this track as 'Not Started'
+                    if (res.ok) {
+                        const submissions: SubmissionData[] = await res.json();
+                        
+                        // Store full submissions for feedback
+                        fullSubmissionsResults[mentee.name].push(...submissions);
+                        
+                        // Process all tasks for this track for status
+                        tasksInTrack.forEach(task => {
+                            const taskSubmission = submissions.find((s: SubmissionData) => s.task_id === task.id);
+                            const rawStatus = taskSubmission?.status || 'Not Started';
+                            const normalizedStatus = normalizeStatus(rawStatus);
+                            statusResults[mentee.name][task.id] = normalizedStatus;
+                        });
+                    } else {
+                        // If API call fails, set all tasks in this track as 'Not Started'
+                        tasksInTrack.forEach(task => {
+                            statusResults[mentee.name][task.id] = 'Not Started';
+                        });
+                    }
+                } catch (error) {
+                    console.error(`Error fetching submissions for ${mentee.name}, track ${trackId}:`, error);
+                    // Set all tasks in this track as 'Not Started' on error
                     tasksInTrack.forEach(task => {
                         statusResults[mentee.name][task.id] = 'Not Started';
                     });
                 }
-            } catch (error) {
-                console.error(`Error fetching submissions for ${mentee.name}, track ${trackId}:`, error);
-                // Set all tasks in this track as 'Not Started' on error
-                tasksInTrack.forEach(task => {
-                    statusResults[mentee.name][task.id] = 'Not Started';
-                });
             }
         }
-    }
-    
-    setMenteeSubmissions(statusResults);
-    setMenteeFullSubmissions(fullSubmissionsResults);
-};
+        
+        setMenteeSubmissions(statusResults);
+        setMenteeFullSubmissions(fullSubmissionsResults);
+    };
 
     const fetchMenteeDetails = async (menteeName: string) => {
         try {
@@ -313,10 +321,10 @@ const fetchMenteeSubmissions = async (menteesList: any[], tasksList: Task[]) => 
                             </div>
                         </div>
                         <FeedbackProvided 
-    selectedMentee={selectedMentee}
-    menteeSubmissions={menteeFullSubmissions}
-    tasks={tasks}
-/>
+                            selectedMentee={selectedMentee}
+                            menteeSubmissions={menteeFullSubmissions}
+                            tasks={tasks}
+                        />
                     </div>
                 </div>
             </div>

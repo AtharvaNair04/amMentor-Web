@@ -1,6 +1,4 @@
 'use client'
-import { useState } from "react";
-import MenteeCard from "@/app/components/layout/MenteeCard";
 
 interface TasksViewerProps {
     isMentor: boolean; 
@@ -11,9 +9,7 @@ interface TasksViewerProps {
     onMenteeClick: (taskId: string, menteeId: string) => void;
 }
 
-const TasksViewer = ({ isMentor, tasks, highted_task, mentees = [], onTaskClick, onMenteeClick }: TasksViewerProps) => {
-    const [expandedTaskIndex, setExpandedTaskIndex] = useState<number | null>(null);
-    
+const TasksViewer = ({ isMentor, tasks, highted_task, onTaskClick }: TasksViewerProps) => {
     const toggleExpand = (index: number) => {
         if (isMentor) {
             // For mentors, since there's only one mentee (the selected one), go directly to review
@@ -24,12 +20,6 @@ const TasksViewer = ({ isMentor, tasks, highted_task, mentees = [], onTaskClick,
             const taskId = tasks[index][0];
             onTaskClick(taskId);
         }
-    };
-    
-    const handleMenteeClick = (taskIndex: number, menteeIndex: number) => {
-        const taskId = tasks[taskIndex][0];
-        const menteeEmail = mentees[taskIndex][menteeIndex][1];
-        onMenteeClick(taskId, menteeEmail);
     };
     
     return (

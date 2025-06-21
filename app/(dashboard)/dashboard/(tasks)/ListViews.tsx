@@ -1,4 +1,3 @@
-
 function ReviewedTask({reviewed_tasks}:{reviewed_tasks:string[][]}){
     const tasks = reviewed_tasks.map((task) => (
         <div 
@@ -42,14 +41,33 @@ function UpcomingTask({upcoming_tasks}:{upcoming_tasks:string[][]}){
     );
 }
 
+// Define interface for submission data
+interface SubmissionData {
+    id: number;
+    task_id: number;
+    task_no: number;
+    task_name: string;
+    status: string;
+    mentor_feedback?: string;
+    feedback?: string;
+    submitted_at?: string;
+    reviewed_at?: string;
+    approved_at?: string;
+    // Add other submission properties as needed
+}
 
+// Define interface for Task data
+interface Task {
+    id: number;
+    title: string;
+    // Add other task properties as needed
+}
 
-// Updated FeedbackProvided component to use existing submissions data
-
-function FeedbackProvided({ selectedMentee, menteeSubmissions, tasks }: {
+// Updated FeedbackProvided component to use proper typing
+function FeedbackProvided({ selectedMentee, menteeSubmissions }: {
     selectedMentee: string | null;
-    menteeSubmissions: Record<string, any[]>;
-    tasks: any[];
+    menteeSubmissions: Record<string, SubmissionData[]>;
+    tasks: Task[];
 }) {
     // Get submissions with feedback for the selected mentee
     const getFeedbackTasks = () => {
@@ -83,7 +101,7 @@ function FeedbackProvided({ selectedMentee, menteeSubmissions, tasks }: {
                     <div className="px-2 sm:px-3 pb-2 sm:pb-3">
                         <div className="bg-black/20 rounded p-2 text-xs sm:text-sm">
                             <p className="text-gray-300 group-hover:text-gray-700">
-                                {submission.mentor_feedback.length > 100 
+                                {submission.mentor_feedback && submission.mentor_feedback.length > 100 
                                     ? `${submission.mentor_feedback.substring(0, 100)}...` 
                                     : submission.mentor_feedback
                                 }
@@ -111,6 +129,5 @@ function FeedbackProvided({ selectedMentee, menteeSubmissions, tasks }: {
         </div>
     );
 }
-
 
 export {ReviewedTask,FeedbackProvided,UpcomingTask};

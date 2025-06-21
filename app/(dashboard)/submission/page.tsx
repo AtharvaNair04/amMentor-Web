@@ -44,7 +44,6 @@ const TasksPage = () => {
     const { 
         selectedMentee, 
         selectedMenteeEmail, 
-        mentees, 
         isLoading: menteesLoading 
     } = useMentee();
     const router = useRouter();
@@ -296,7 +295,7 @@ const TasksPage = () => {
         };
 
         init();
-    }, [isLoggedIn, router, ismentor, fetchTasks, fetchSelectedMenteeSubmissions, fetchMySubmissions, menteesLoading, selectedMentee, selectedMenteeEmail]);
+    }, [isLoggedIn, router, ismentor, fetchTasks, fetchSelectedMenteeSubmissions, fetchMySubmissions, menteesLoading, selectedMentee, selectedMenteeEmail, userRole]);
 
     // Separate effect to handle mentee selection changes
     useEffect(() => {
