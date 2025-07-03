@@ -84,7 +84,7 @@ export default function LoginPage() {
     }
   };
 
-  if (loading) return <div className="text-white text-center py-20">Loading...</div>;
+  if (loading) return <div className="loader"></div>;
 
   return (
     <div className="py-6 w-full max-w-lg relative z-10 mx-auto">
