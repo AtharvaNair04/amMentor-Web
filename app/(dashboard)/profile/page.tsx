@@ -54,7 +54,7 @@ const ProfilePage = () => {
   const isMentor = user.role === 'mentor';
 
   return (
-    <div className="bg-[#1E1E1E] text-white px-6 py-10 min-h-screen font-sans">
+    <div className="bg-[#1E1E1E] text-white px-6 py-10 font-sans">
       <div className="max-w-6xl mx-auto space-y-10">
         <div className="flex flex-col md:flex-row items-center md:items-start bg-[#2a2a2a] rounded-lg p-8 md:p-10 gap-10 w-full shadow-md">
           <div className="flex flex-col items-center">
