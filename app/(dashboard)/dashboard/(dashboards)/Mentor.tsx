@@ -61,7 +61,7 @@ const MentorDashboard = () => {
         setSelectedMentee, 
         isLoading: menteesLoading 
     } = useMentee();
-
+    const [loading, setLoading] = useState(true);
     const [menteeDetails, setMenteeDetails] = useState<MenteeDetails>({
         mentee_name: "temp",
         total_points: 0,
@@ -249,9 +249,10 @@ const MentorDashboard = () => {
                 if (fetchedTasks.length > 0) {
                     await fetchMenteeSubmissions(mentees, fetchedTasks);
                 }
+                setLoading(false);
             }
         };
-
+        setLoading(true);
         initData();
     }, [menteesLoading, mentees]);
 
@@ -276,6 +277,7 @@ const MentorDashboard = () => {
     if (menteesLoading) {
         return (
             <div className="text-white flex justify-center items-center h-screen">
+                <div className="loader"></div>
                 <div className="text-xl">Loading mentees...</div>
             </div>
         );
@@ -298,7 +300,8 @@ const MentorDashboard = () => {
                     </select>
                 </div>
                 <div className="flex justify-between mt-4 sm:mt-6 md:mt-10">
-                    <CurrentTask 
+                    <CurrentTask
+                        isLoading = {loading} 
                         mentor={true} 
                         task={currentTask}
                         status={currentTask && selectedMentee ? menteeSubmissions[selectedMentee]?.[currentTask.id] : undefined}
@@ -314,10 +317,10 @@ const MentorDashboard = () => {
                     <div className="flex flex-col gap-4 w-full lg:w-[50%]">
                         <div className="flex flex-col sm:flex-row gap-5 justify-between">
                             <div className="w-full sm:w-1/2">
-                                <UpcomingTask upcoming_tasks={getUpcomingMentorTasks()} />
+                                <UpcomingTask isLoading={loading} upcoming_tasks={getUpcomingMentorTasks()} />
                             </div>
                             <div className="w-1/2">
-                                <ReviewedTask reviewed_tasks={getReviewedMentorTasks()} />
+                                <ReviewedTask isLoading={loading} reviewed_tasks={getReviewedMentorTasks()} />
                             </div>
                         </div>
                         <FeedbackProvided 
