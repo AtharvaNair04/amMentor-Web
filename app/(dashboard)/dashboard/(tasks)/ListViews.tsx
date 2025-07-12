@@ -1,4 +1,4 @@
-function ReviewedTask({reviewed_tasks}:{reviewed_tasks:string[][]}){
+function ReviewedTask({reviewed_tasks, isLoading}:{reviewed_tasks:string[][] ,isLoading:boolean }){
     const tasks = reviewed_tasks.map((task) => (
         <div 
             key={task[0]}
@@ -14,13 +14,13 @@ function ReviewedTask({reviewed_tasks}:{reviewed_tasks:string[][]}){
         <div className="bg-deeper-grey rounded-xl md:rounded-3xl p-2 sm:p-3 pb-4 sm:pb-5 w-full">
             <h1 className="text-white font-bold text-base sm:text-lg md:text-xl px-2 sm:px-4 md:px-16 p-1 sm:p-2 md:p-4">REVIEWED TASKS</h1>
             <div className={`h-48 sm:h-56 md:h-44 overflow-y-auto scrollbar-hide flex flex-col gap-2 sm:gap-3`}>
-                {tasks.length > 0 ? tasks : <div className="text-gray-400 text-center p-4">No reviewed tasks</div>}
+                {tasks.length > 0 ? tasks : isLoading? <div className="loader m-auto"></div>:<div className="text-gray-400 text-center p-4">No reviewed tasks</div>}
             </div>
         </div>
     );
 }
 
-function UpcomingTask({upcoming_tasks}:{upcoming_tasks:string[][]}){
+function UpcomingTask({upcoming_tasks, isLoading}:{upcoming_tasks:string[][],isLoading:boolean}){
     const tasks = upcoming_tasks.map((task) => (
         <div 
             key={task[0]} 
@@ -35,7 +35,8 @@ function UpcomingTask({upcoming_tasks}:{upcoming_tasks:string[][]}){
         <div className="bg-deeper-grey rounded-xl md:rounded-3xl p-2 sm:p-3 pb-4 sm:pb-5 w-full">
             <h1 className="text-white font-bold text-base sm:text-lg md:text-xl px-2 sm:px-4 md:px-16 p-1 sm:p-2 md:p-4">UPCOMING TASKS</h1>
             <div className={`h-48 sm:h-56 md:h-44 overflow-y-auto scrollbar-hide flex flex-col gap-2 sm:gap-3`}>
-                {tasks.length > 0 ? tasks : <div className="text-gray-400 text-center p-4">No upcoming tasks</div>}
+                {isLoading?<div className="loader m-auto"></div>:
+                tasks.length > 0 ? tasks : <div className="text-gray-400 text-center p-4">No upcoming tasks</div>}
             </div>
         </div>
     );

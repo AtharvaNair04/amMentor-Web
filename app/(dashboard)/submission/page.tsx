@@ -428,8 +428,9 @@ const TasksPage = () => {
 
     if (loading || (ismentor && menteesLoading)) {
         return (
-            <div className="text-white flex justify-center items-center h-screen">
-                <div className="text-xl">Loading...</div>
+            <div className="text-white flex flex-col gap-2 justify-center items-center h-screen">
+                <div className="loader"></div>
+                <div className="text-xl">Loading</div>
             </div>
         );
     }
@@ -532,7 +533,7 @@ const TasksPage = () => {
                             {ismentor ? "Submitted " : "Reviewed"}
                         </button>
                     </div>
-                    <div className="w-[95%] sm:w-[85%] md:w-[80%] mt-7 h-[80vh] overflow-scroll scrollbar-hide px-5 m-auto">
+                    <div className="w-[95%] sm:w-[85%] md:w-[80%] mt-7 h-[72vh] overflow-scroll scrollbar-hide px-5 m-auto">
                         <TasksViewer 
                             isMentor={ismentor}
                             highted_task={CurrentTaskIndex} 

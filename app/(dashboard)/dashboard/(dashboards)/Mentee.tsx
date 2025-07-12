@@ -52,6 +52,8 @@ const MenteeDashboard = () => {
         total_points: 0,
         tasks_completed: 0 
     });
+
+    const [loading, setLoading] = useState(true);
     const [tasks, setTasks] = useState<Task[]>([]);
     const [mySubmissions, setMySubmissions] = useState<Record<number, string>>({});
     const [currentTask, setCurrentTask] = useState<Task | null>(null);
@@ -191,12 +193,13 @@ const MenteeDashboard = () => {
                 
                 // Fetch submissions after getting tasks
                 await fetchMySubmissions(tasksData, trackId);
+                setLoading(false);
             } catch (error) {
                 console.error('Error fetching tasks:', error);
                 router.push('/track');
             }
         };
-
+        setLoading(true);
         fetchMenteeDetails();
         fetchTasks();
     }, [router]);
@@ -223,6 +226,7 @@ const MenteeDashboard = () => {
                 </div>
                 <div className="flex justify-between mt-4 sm:mt-6 md:mt-10">
                     <CurrentTask 
+                        isLoading={true}
                         task={currentTask}
                         status={currentTask ? mySubmissions[currentTask.id] : undefined}
                     />
@@ -230,10 +234,10 @@ const MenteeDashboard = () => {
                 <div className="flex flex-col lg:flex-row justify-between mt-4 sm:mt-6 md:mt-10 gap-6 lg:gap-0">
                     <div className="flex flex-col gap-6 md:gap-12 w-full lg:w-[48%]">
                         <PlayerStats rank={menteeDetails.tasks_completed} points={menteeDetails.total_points} />
-                        <ReviewedTask reviewed_tasks={getReviewedTasks()} />
+                        <ReviewedTask isLoading={loading} reviewed_tasks={getReviewedTasks()}  />
                     </div>
                     <div className="flex flex-col gap-2 w-full lg:w-[46%]">
-                        <UpcomingTask upcoming_tasks={getUpcomingTasks()} />
+                        <UpcomingTask isLoading={loading} upcoming_tasks={getUpcomingTasks()} />
                         <Badges />
                     </div>
                 </div>

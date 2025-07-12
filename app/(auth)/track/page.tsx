@@ -64,7 +64,7 @@ export default function TrackSelectionPage() {
   if (loading) {
     return (
       <div className="flex flex-col items-center w-full">
-        <div className="text-white text-center py-20">Loading tracks...</div>
+        <div className="loader"></div>
       </div>
     );
   }
