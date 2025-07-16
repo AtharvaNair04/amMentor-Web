@@ -120,7 +120,7 @@ const SubmissionReview = ({
             id: task.id,
             title: task.title,
             description: task.description,
-            deadline: task.deadline,
+            deadline: null,//task.deadline,
             track_id: task.track_id,
             task_no: task.task_no,
             points: task.points,
