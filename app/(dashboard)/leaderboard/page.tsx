@@ -42,7 +42,6 @@ const LeaderBoardPage = () => {
   };
 
   const fetchLeaderboardData = async (currentTrackId: number) => {
-    setLoading(true);
     try {
       const data = await fetchPlayerdata(currentTrackId);
       setLeaderboardData(data);
@@ -54,7 +53,6 @@ const LeaderBoardPage = () => {
   };
 
   const fetchOverallLeaderboard = async () => {
-    setLoading(true);
     try {
       const promises = tracks.map(track => fetchPlayerdata(track.id));
       const allTrackData = await Promise.all(promises);
@@ -110,12 +108,13 @@ const LeaderBoardPage = () => {
     }
   };
 
-  useEffect(() => {
-    if (!isLoggedIn) {
-      router.push('/');
-      return;
-    }
-    
+useEffect(() => {
+  if (!isLoggedIn) {
+    router.push('/');
+    return;
+  }
+  let interval: NodeJS.Timeout;
+  const runFetch = () => {
     if (trackId === 'overall') {
       if (tracks.length > 0) {
         fetchOverallLeaderboard();
@@ -123,7 +122,15 @@ const LeaderBoardPage = () => {
     } else {
       fetchLeaderboardData(trackId as number);
     }
-  }, [isLoggedIn, router, trackId, tracks]);
+  };
+  setLoading(true);
+  runFetch();
+  interval = setInterval(() => {
+    runFetch();
+  }, 10000);
+  return () => clearInterval(interval);
+}, [isLoggedIn, router, trackId, tracks]);
+
 
   useEffect(() => {
     fetchTracksData();
@@ -302,8 +309,8 @@ const LeaderBoardPage = () => {
           </div>
           
           {loading && (
-            <div className="flex justify-center items-center py-8">
-              <div className="text-white text-lg">Loading...</div>
+            <div className="flex h-full w-full inset-0 absolute justify-center items-center">
+              <div className="loader"></div>
             </div>
           )}
           
@@ -315,7 +322,6 @@ const LeaderBoardPage = () => {
                 <div className="w-2/6 text-right">POINTS</div>
               </div>
               <div className="border-t border-grey mb-1"></div>
-              
               {trackId === 'overall' 
                 ? overallData.map(renderOverallEntry)
                 : leaderboardData.map(renderLeaderboardEntry)

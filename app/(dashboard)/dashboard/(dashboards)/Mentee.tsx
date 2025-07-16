@@ -159,9 +159,10 @@ const MenteeDashboard = () => {
                 }  
                 const response = await data.json();
                 const leaderboard: MenteeDetails[] = response['leaderboard'];
+
                 const currentUserName = localStorage.getItem("name");
                 const currentUserIndex = leaderboard.findIndex(
-                (element) => element.mentee_name === currentUserName
+                  (element) => element.mentee_name === currentUserName
                 );
                 if (currentUserIndex !== -1) {
                     setMenteeDetails({
