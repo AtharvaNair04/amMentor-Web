@@ -29,7 +29,7 @@ const normalizeStatus = (status: string): string => {
     const statusMap: { [key: string]: string } = {
         'submitted': 'Submitted',
         'approved': 'Reviewed',  // This is the key fix!
-        'rejected': 'Reviewed',
+        'rejected': 'Rejected',
         'paused': 'Paused',
         'in progress': 'In Progress',
         'not started': 'Not Started'
@@ -430,7 +430,6 @@ const TasksPage = () => {
         return (
             <div className="text-white flex flex-col gap-2 justify-center items-center h-screen">
                 <div className="loader"></div>
-                <div className="text-xl">Loading</div>
             </div>
         );
     }

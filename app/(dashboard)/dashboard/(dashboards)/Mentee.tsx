@@ -165,6 +165,7 @@ const MenteeDashboard = () => {
                         setMenteeDetails(element);
                     }
                 });
+                console.log(menteeDetails);
             } catch (error) {
                 console.error('Error fetching mentee details:', error);
             }

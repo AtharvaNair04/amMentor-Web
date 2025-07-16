@@ -12,6 +12,7 @@ import {
   FaSignOutAlt,
 } from 'react-icons/fa';
 import { useAuth } from '@/app/context/authcontext';
+import { json } from 'stream/consumers';
 
 const API_URL = 'https://amapi.amfoss.in/';
 
@@ -34,14 +35,20 @@ const ProfilePage = () => {
         const data = await res.json();
         if (!res.ok) throw new Error(data.detail);
         setUser(data);
+        sessionStorage.setItem("cache_profile",JSON.stringify(data));
       } catch (err) {
         console.error('Failed to fetch user:', err);
         logout();
         router.push('/login');
       }
     };
-
-    fetchUser();
+    let cached_profile = sessionStorage.getItem("cache_profile");
+    if(cached_profile){
+      setUser(JSON.parse(cached_profile));
+    }
+    else{
+      fetchUser();
+    }
   }, [logout, router]);
 
   const handleLogout = () => {
@@ -49,7 +56,12 @@ const ProfilePage = () => {
     router.push('/login');
   };
 
-  if (!user) return <div className="text-white p-10">Loading profile...</div>;
+  if (!user)
+    return (
+      <div className="fixed inset-0 flex items-center justify-center bg-[#1E1E1E]">
+        <div className="loader"></div>
+      </div>
+    );
 
   const isMentor = user.role === 'mentor';
 
