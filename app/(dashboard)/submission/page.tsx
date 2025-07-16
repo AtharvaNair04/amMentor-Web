@@ -336,6 +336,7 @@ const TasksPage = () => {
                     }
                 }
                 setLoading(false);
+
             } catch (error) {
                 console.error('Error initializing:', error);
                 setLoading(false);
@@ -361,6 +362,7 @@ const TasksPage = () => {
             console.log('My submissions:', mySubmissions);
             console.log('Active toggle:', toggles.findIndex(t => t));
             setToggledTasks(formattedTasks);
+            console.log(tasks);
         }
     }, [tasks, getFormattedTasks, mySubmissions, toggles]);
 
