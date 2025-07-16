@@ -113,7 +113,6 @@ useEffect(() => {
     router.push('/');
     return;
   }
-  let interval: NodeJS.Timeout;
   const runFetch = () => {
     if (trackId === 'overall') {
       if (tracks.length > 0) {
@@ -125,7 +124,7 @@ useEffect(() => {
   };
   setLoading(true);
   runFetch();
-  interval = setInterval(() => {
+  const interval: NodeJS.Timeout = setInterval(() => {
     runFetch();
   }, 10000);
   return () => clearInterval(interval);

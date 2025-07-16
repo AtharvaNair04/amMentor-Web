@@ -321,16 +321,16 @@ const TaskDetails = ({
     return Math.max(0, task.deadline - daysElapsed);
   };
 
-  const getProgressColor = (): string => {
-    if (!task?.deadline) return 'green';
-    const remaining = getDaysRemaining();
-    const total = task.deadline;
-    const percentRemaining = (remaining / total) * 100;
+  // const getProgressColor = (): string => {
+  //   if (!task?.deadline) return 'green';
+  //   const remaining = getDaysRemaining();
+  //   const total = task.deadline;
+  //   const percentRemaining = (remaining / total) * 100;
     
-    if (percentRemaining > 50) return 'green';
-    if (percentRemaining > 25) return 'yellow';
-    return 'red';
-  };
+  //   if (percentRemaining > 50) return 'green';
+  //   if (percentRemaining > 25) return 'yellow';
+  //   return 'red';
+  // };
 
   if (loading) {
     return <div className="text-white">Loading task details...</div>;

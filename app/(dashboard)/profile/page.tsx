@@ -12,8 +12,6 @@ import {
   FaSignOutAlt,
 } from 'react-icons/fa';
 import { useAuth } from '@/app/context/authcontext';
-import { json } from 'stream/consumers';
-
 const API_URL = 'https://amapi.amfoss.in/';
 
 const ProfilePage = () => {
@@ -42,7 +40,7 @@ const ProfilePage = () => {
         router.push('/login');
       }
     };
-    let cached_profile = sessionStorage.getItem("cache_profile");
+    const cached_profile = sessionStorage.getItem("cache_profile");
     if(cached_profile){
       setUser(JSON.parse(cached_profile));
     }
