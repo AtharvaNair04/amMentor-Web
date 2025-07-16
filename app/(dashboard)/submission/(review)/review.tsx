@@ -120,7 +120,7 @@ const SubmissionReview = ({
             id: task.id,
             title: task.title,
             description: task.description,
-            deadline: task.deadline,
+            deadline: null,//task.deadline,
             track_id: task.track_id,
             task_no: task.task_no,
             points: task.points,
@@ -328,7 +328,7 @@ const SubmissionReview = ({
     return (
       <div className="max-w-[90rem] mx-auto">
         <div className="bg-container-grey bg-opacity-50 rounded-3xl p-4 md:p-6 min-h-[800px] w-full relative flex items-center justify-center">
-          <div className="text-white text-xl">Loading submission data...</div>
+          <div className='loader'></div>
         </div>
       </div>
     );

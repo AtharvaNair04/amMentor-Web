@@ -5,7 +5,6 @@ import TasksViewer from "./(tasks)/submissionitems";
 import { useAuth } from "@/app/context/authcontext";
 import { useMentee } from "@/app/context/menteeContext";
 import { useRouter } from 'next/navigation';
-
 import SubmissionReview from "./(review)/review";
 
 interface Task {
@@ -29,7 +28,7 @@ const normalizeStatus = (status: string): string => {
     const statusMap: { [key: string]: string } = {
         'submitted': 'Submitted',
         'approved': 'Reviewed',  // This is the key fix!
-        'rejected': 'Reviewed',
+        'rejected': 'Rejected',
         'paused': 'Paused',
         'in progress': 'In Progress',
         'not started': 'Not Started'
@@ -118,6 +117,13 @@ const TasksPage = () => {
         const response = await fetch(`https://amapi.amfoss.in/tracks/${trackId}/tasks`);
         if (!response.ok) throw new Error('Failed to fetch tasks');
         const data = await response.json();
+
+        //For Praveshan
+        for(let i = 0; i<data.length;i++){
+            data[i].deadline = null;
+        }
+
+
         setTasks(data);
         return data;
     }, [userRole, router]);
@@ -275,7 +281,8 @@ const TasksPage = () => {
                 if (!unlocked) {
                     displayStatus = `🔒 ${status}`;
                 } else if (task.deadline === null) {
-                    displayStatus = `${status} ⚡ (No deadline)`;
+                    //displayStatus = `${status} ⚡ (No deadline)`;
+                    displayStatus = `${status}`;
                 } else {
                     displayStatus = `${status} (${task.deadline} days)`;
                 }
@@ -430,7 +437,6 @@ const TasksPage = () => {
         return (
             <div className="text-white flex flex-col gap-2 justify-center items-center h-screen">
                 <div className="loader"></div>
-                <div className="text-xl">Loading</div>
             </div>
         );
     }
