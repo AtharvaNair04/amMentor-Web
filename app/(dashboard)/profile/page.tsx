@@ -12,7 +12,6 @@ import {
   FaSignOutAlt,
 } from 'react-icons/fa';
 import { useAuth } from '@/app/context/authcontext';
-import { json } from 'stream/consumers';
 
 const API_URL = 'https://amapi.amfoss.in/';
 
@@ -35,18 +34,18 @@ const ProfilePage = () => {
         const data = await res.json();
         if (!res.ok) throw new Error(data.detail);
         setUser(data);
-        sessionStorage.setItem("cache_profile",JSON.stringify(data));
+        sessionStorage.setItem("cache_profile", JSON.stringify(data));
       } catch (err) {
         console.error('Failed to fetch user:', err);
         logout();
         router.push('/login');
       }
     };
-    let cached_profile = sessionStorage.getItem("cache_profile");
-    if(cached_profile){
-      setUser(JSON.parse(cached_profile));
-    }
-    else{
+    
+    const cachedProfile = sessionStorage.getItem("cache_profile");
+    if (cachedProfile) {
+      setUser(JSON.parse(cachedProfile));
+    } else {
       fetchUser();
     }
   }, [logout, router]);

@@ -4,7 +4,7 @@ import { LeaderboardEntry } from './(items)/leaderboarditems';
 import { fetchPlayerdata, fetchtrack } from './(api)/ApiCalls';
 import { useAuth } from "@/app/context/authcontext";
 import { useRouter } from 'next/navigation';
-import { JSX, useEffect, useState } from 'react';
+import { JSX, useEffect, useState, useCallback } from 'react';
 
 interface Track {
   id: number;
@@ -41,7 +41,7 @@ const LeaderBoardPage = () => {
     ));
   };
 
-  const fetchLeaderboardData = async (currentTrackId: number) => {
+  const fetchLeaderboardData = useCallback(async (currentTrackId: number) => {
     try {
       const data = await fetchPlayerdata(currentTrackId);
       setLeaderboardData(data);
@@ -50,9 +50,9 @@ const LeaderBoardPage = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
-  const fetchOverallLeaderboard = async () => {
+  const fetchOverallLeaderboard = useCallback(async () => {
     try {
       const promises = tracks.map(track => fetchPlayerdata(track.id));
       const allTrackData = await Promise.all(promises);
@@ -92,12 +92,12 @@ const LeaderBoardPage = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [tracks]);
 
-  const fetchTracksData = async () => {
+  const fetchTracksData = useCallback(async () => {
     const data = await fetchtrack();
     setTracks(data);
-  };
+  }, []);
 
   const handleTrackChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
     const value = event.target.value;
@@ -108,33 +108,35 @@ const LeaderBoardPage = () => {
     }
   };
 
-useEffect(() => {
-  if (!isLoggedIn) {
-    router.push('/');
-    return;
-  }
-  let interval: NodeJS.Timeout;
-  const runFetch = () => {
-    if (trackId === 'overall') {
-      if (tracks.length > 0) {
-        fetchOverallLeaderboard();
-      }
-    } else {
-      fetchLeaderboardData(trackId as number);
+  useEffect(() => {
+    if (!isLoggedIn) {
+      router.push('/');
+      return;
     }
-  };
-  setLoading(true);
-  runFetch();
-  interval = setInterval(() => {
+    
+    const runFetch = () => {
+      if (trackId === 'overall') {
+        if (tracks.length > 0) {
+          fetchOverallLeaderboard();
+        }
+      } else {
+        fetchLeaderboardData(trackId as number);
+      }
+    };
+    
+    setLoading(true);
     runFetch();
-  }, 10000);
-  return () => clearInterval(interval);
-}, [isLoggedIn, router, trackId, tracks]);
-
+    
+    const interval = setInterval(() => {
+      runFetch();
+    }, 10000);
+    
+    return () => clearInterval(interval);
+  }, [isLoggedIn, router, trackId, tracks, fetchOverallLeaderboard, fetchLeaderboardData]);
 
   useEffect(() => {
     fetchTracksData();
-  }, []);
+  }, [fetchTracksData]);
 
   if (!isLoggedIn) {
     return null;
