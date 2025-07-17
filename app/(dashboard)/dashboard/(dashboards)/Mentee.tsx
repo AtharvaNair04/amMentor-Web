@@ -19,7 +19,7 @@ interface Task {
 }
 
 interface MenteeDetails {
-    tasks_completed: number;
+    position: number;
     mentee_name: string;
     total_points: number;
 }
@@ -48,9 +48,9 @@ const normalizeStatus = (status: string): string => {
 const MenteeDashboard = () => {
     const router = useRouter();
     const [menteeDetails, setMenteeDetails] = useState<MenteeDetails>({
+        position: 0,
         mentee_name: "temp",
         total_points: 0,
-        tasks_completed: 0 
     });
 
     const [loading, setLoading] = useState(true);
@@ -149,22 +149,31 @@ const MenteeDashboard = () => {
 
     useEffect(() => {
         const fetchMenteeDetails = async () => {
-            try {
+             try {
                 const currentTrack = sessionStorage.getItem("currentTrack");
                 const track: { id: number; name: string } = currentTrack ? JSON.parse(currentTrack) : { id: 0, name: "" };
-                
+        
                 const data = await fetch(`https://amapi.amfoss.in/leaderboard/${track.id}`);
                 if (!data.ok) {
                     throw new Error("Failed to fetch Points and Rank!");
-                }
+                }  
                 const response = await data.json();
                 const leaderboard: MenteeDetails[] = response['leaderboard'];
-                
-                leaderboard.forEach((element) => {
-                    if (element.mentee_name === localStorage.getItem("name")) {
-                        setMenteeDetails(element);
-                    }
-                });
+                const currentUserName = localStorage.getItem("name");
+                const currentUserIndex = leaderboard.findIndex(
+                (element) => element.mentee_name === currentUserName
+                );
+                if (currentUserIndex !== -1) {
+                    setMenteeDetails({
+                        ...leaderboard[currentUserIndex],
+                        position: currentUserIndex + 1
+                    });
+                } else {
+                    setMenteeDetails(prev => ({
+                        ...prev,
+                    position: 0 
+                    }));
+                }
             } catch (error) {
                 console.error('Error fetching mentee details:', error);
             }
@@ -191,7 +200,6 @@ const MenteeDashboard = () => {
                 const tasksData: Task[] = await response.json();
                 setTasks(tasksData);
                 
-                // Fetch submissions after getting tasks
                 await fetchMySubmissions(tasksData, trackId);
                 setLoading(false);
             } catch (error) {
@@ -233,7 +241,7 @@ const MenteeDashboard = () => {
                 </div>
                 <div className="flex flex-col lg:flex-row justify-between mt-4 sm:mt-6 md:mt-10 gap-6 lg:gap-0">
                     <div className="flex flex-col gap-6 md:gap-12 w-full lg:w-[48%]">
-                        <PlayerStats rank={menteeDetails.tasks_completed} points={menteeDetails.total_points} />
+                        <PlayerStats rank={menteeDetails.position} points={menteeDetails.total_points} />
                         <ReviewedTask isLoading={loading} reviewed_tasks={getReviewedTasks()}  />
                     </div>
                     <div className="flex flex-col gap-2 w-full lg:w-[46%]">
