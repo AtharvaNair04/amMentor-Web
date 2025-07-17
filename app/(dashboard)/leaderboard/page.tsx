@@ -4,7 +4,7 @@ import { LeaderboardEntry } from './(items)/leaderboarditems';
 import { fetchPlayerdata, fetchtrack } from './(api)/ApiCalls';
 import { useAuth } from "@/app/context/authcontext";
 import { useRouter } from 'next/navigation';
-import { JSX, useEffect, useState } from 'react';
+import { JSX, useEffect, useState, useCallback } from 'react';
 
 interface Track {
   id: number;
@@ -52,7 +52,7 @@ const LeaderBoardPage = () => {
     }
   };
 
-  const fetchOverallLeaderboard = async () => {
+  const fetchOverallLeaderboard = useCallback(async () => {
     try {
       const promises = tracks.map(track => fetchPlayerdata(track.id));
       const allTrackData = await Promise.all(promises);
@@ -92,7 +92,7 @@ const LeaderBoardPage = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [tracks]);
 
   const fetchTracksData = async () => {
     const data = await fetchtrack();
@@ -129,7 +129,7 @@ useEffect(() => {
     runFetch();
   }, 10000);
   return () => clearInterval(interval);
-}, [isLoggedIn, router, trackId, tracks]);
+}, [isLoggedIn, router, trackId, tracks, fetchOverallLeaderboard]);
 
 
   useEffect(() => {

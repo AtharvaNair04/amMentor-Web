@@ -22,6 +22,7 @@ interface MenteeDetails {
     tasks_completed: number;
     mentee_name: string;
     total_points: number;
+    position: number;
 }
 
 interface SubmissionData {
@@ -65,7 +66,8 @@ const MentorDashboard = () => {
     const [menteeDetails, setMenteeDetails] = useState<MenteeDetails>({
         mentee_name: "temp",
         total_points: 0,
-        tasks_completed: 0 
+        tasks_completed: 0,
+        position: 0
     });
     const [tasks, setTasks] = useState<Task[]>([]);
     const [totaltask, settotaltask] = useState(0);
@@ -198,15 +200,22 @@ const MentorDashboard = () => {
             const response = await data.json();
             const leaderboard: MenteeDetails[] = response['leaderboard'];
             
-            const menteeDetail = leaderboard.find(element => element.mentee_name === menteeName);
-            if (menteeDetail) {
-                setMenteeDetails(menteeDetail);
+            // Find the mentee's position in the leaderboard
+            const menteeIndex = leaderboard.findIndex(element => element.mentee_name === menteeName);
+            const menteeDetail = leaderboard[menteeIndex];
+            
+            if (menteeDetail && menteeIndex !== -1) {
+                setMenteeDetails({
+                    ...menteeDetail,
+                    position: menteeIndex + 1 // Add 1 because array is 0-indexed but rank starts from 1
+                });
             } else {
                 // Set default values if mentee not found in leaderboard
                 setMenteeDetails({
                     mentee_name: menteeName,
                     total_points: 0,
-                    tasks_completed: 0
+                    tasks_completed: 0,
+                    position: 0 // Default position when not found
                 });
             }
         } catch (error) {
@@ -215,7 +224,8 @@ const MentorDashboard = () => {
             setMenteeDetails({
                 mentee_name: menteeName,
                 total_points: 0,
-                tasks_completed: 0
+                tasks_completed: 0,
+                position: 0 // Default position on error
             });
         }
     };
@@ -309,7 +319,7 @@ const MentorDashboard = () => {
                 </div>
                 <div className="flex flex-col lg:flex-row justify-between mt-4 sm:mt-6 md:mt-10 gap-6 lg:gap-0">
                     <div className="flex flex-col gap-2 w-full lg:w-[46%]">
-                        <PlayerStats rank={menteeDetails.tasks_completed} points={menteeDetails.total_points} />
+                        <PlayerStats rank={menteeDetails.position} points={menteeDetails.total_points} />
                         <Badges />
                         {/* Updated to use submitted tasks count instead of completed tasks */}
                         <PlayerProgress tasks={submittedTasksCount} totaltasks={totaltask} />
