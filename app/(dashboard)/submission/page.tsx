@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import TasksViewer from "./(tasks)/submissionitems";
 import { useAuth } from "@/app/context/authcontext";
 import { useMentee } from "@/app/context/menteeContext";
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 
 import SubmissionReview from "./(review)/review";
 
@@ -46,6 +46,7 @@ const TasksPage = () => {
         selectedMenteeEmail, 
         isLoading: menteesLoading 
     } = useMentee();
+    const searchParams = useSearchParams();
     const router = useRouter();
     const [toggles, setToggles] = useState([true, false, false]);
     const [showReview, setShowReview] = useState(false);
@@ -57,6 +58,7 @@ const TasksPage = () => {
     const [mySubmissions, setMySubmissions] = useState<Record<number, string>>({});
     const [currentTrack, setCurrentTrack] = useState<{id: number; name: string} | null>(null);
     
+
     // Get user email from localStorage/sessionStorage
     const getUserEmail = (): string | null => {
         const email = localStorage.getItem('email');
@@ -303,7 +305,6 @@ const TasksPage = () => {
                     setLoading(false);
                     return;
                 }
-
                 // Get track ID once
                 let trackId;
                 if (userRole === 'Mentor') {
@@ -316,7 +317,6 @@ const TasksPage = () => {
                         setCurrentTrack(trackData);
                     }
                 }
-
                 if (ismentor) {
                     // Wait for mentees to load, then fetch submissions for selected mentee
                     if (!menteesLoading && selectedMentee && selectedMenteeEmail) {
@@ -327,6 +327,11 @@ const TasksPage = () => {
                     if (trackId) {
                         await fetchMySubmissions(trackId, fetchedTasks);
                     }
+                }
+                if(searchParams.has("page")){
+                    setSelectedTaskId(searchParams.get("page"));
+                    setSelectedMenteeId(selectedMenteeEmail);
+                    setShowReview(true);
                 }
                 setLoading(false);
             } catch (error) {
