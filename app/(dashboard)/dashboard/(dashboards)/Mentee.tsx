@@ -121,23 +121,18 @@ const MenteeDashboard = () => {
         if (!userEmail) return;
         
         const results: Record<number, string> = {};
+        const res = await fetch(`https://amapi.amfoss.in/submissions/?email=${encodeURIComponent(userEmail)}&track_id=${trackId}`);
         for (const task of tasksList) {
             try {
-                const res = await fetch(`https://amapi.amfoss.in/submissions/?email=${encodeURIComponent(userEmail)}&track_id=${trackId}`);
-                
                 if (res.ok) {
                     const submissions: Submission[] = await res.json();
-                    const taskSubmission = submissions.find((s: Submission) => s.task_id === task.id);
+                    const results: Record<number, string> = {};
+                    tasksList.forEach(task => {
+                        const taskSubmission = submissions.find((s: Submission) => s.task_id === task.id);
+                        results[task.id] = taskSubmission ? normalizeStatus(taskSubmission.status) : 'Not Started';
+                    });
                     
-                    if (taskSubmission) {
-                        const rawStatus = taskSubmission.status;
-                        const normalizedStatus = normalizeStatus(rawStatus);
-                        results[task.id] = normalizedStatus;
-                    } else {
-                        results[task.id] = 'Not Started';
-                    }
-                } else {
-                    results[task.id] = 'Not Started';
+                    setMySubmissions(results);
                 }
             } catch (error) {
                 console.error(`Error fetching submission for task ${task.id}:`, error);

@@ -149,7 +149,6 @@ const MentorDashboard = () => {
         for (const mentee of menteesList) {
             statusResults[mentee.name] = {};
             fullSubmissionsResults[mentee.name] = [];
-            
             // Fetch submissions per track instead of per task
             for (const [trackId, tasksInTrack] of Object.entries(tasksByTrack)) {
                 try {
