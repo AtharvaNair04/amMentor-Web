@@ -60,7 +60,7 @@ export default function CurrentTask({ mentor = false, task, status , isLoading }
     }
 
     return (
-        <div className="flex flex-col sm:flex-row h-auto sm:h-40 md:h-48 rounded-xl md:rounded-3xl text-black w-full bg-primary-yellow justify-between p-4 md:px-8 md:py-3">
+        <div className="hover:scale-105 transition-transform flex flex-col sm:flex-row h-auto sm:h-40 md:h-48 rounded-xl md:rounded-3xl text-black w-full bg-primary-yellow justify-between p-4 md:px-8 md:py-3">
             <div className="h-full mb-4 sm:mb-0">
                 <h3 className="font-bold text-xs sm:text-sm md:text-base">
                     {mentor ? "LATEST SUBMITTED TASK" : "CURRENT TASK"}

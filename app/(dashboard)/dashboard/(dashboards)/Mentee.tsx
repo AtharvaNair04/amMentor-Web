@@ -222,7 +222,7 @@ const MenteeDashboard = () => {
                 <div className="flex flex-col sm:flex-row justify-between">
                     <div className="flex text-xl sm:text-2xl md:text-3xl gap-1 mb-4 sm:mb-0">
                         <h1>Welcome, </h1>
-                        <h1 className="text-primary-yellow">Mentee</h1>
+                        <h1 className="text-primary-yellow">Padawan</h1>
                     </div>
                     <Link href="/track" className="text-primary-yellow underline mb-6 sm:mb-0">
                         Change Track
@@ -242,7 +242,7 @@ const MenteeDashboard = () => {
                     </div>
                     <div className="flex flex-col gap-2 w-full lg:w-[46%]">
                         <UpcomingTask isLoading={loading} upcoming_tasks={getUpcomingTasks()} />
-                        <Badges />
+                        {/* <Badges /> */}
                     </div>
                 </div>
             </div>
