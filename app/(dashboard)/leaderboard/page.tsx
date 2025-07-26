@@ -108,7 +108,7 @@ const LeaderBoardPage = () => {
     }
   };
 
-  useEffect(() => {
+    useEffect(() => {
     if (!isLoggedIn) {
       router.push('/');
       return;

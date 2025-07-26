@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import TasksViewer from "./(tasks)/submissionitems";
 import { useAuth } from "@/app/context/authcontext";
 import { useMentee } from "@/app/context/menteeContext";
+
 import { useRouter, useSearchParams } from 'next/navigation';
 
 import SubmissionReview from "./(review)/review";
@@ -120,6 +121,13 @@ const TasksPage = () => {
         const response = await fetch(`https://amapi.amfoss.in/tracks/${trackId}/tasks`);
         if (!response.ok) throw new Error('Failed to fetch tasks');
         const data = await response.json();
+
+        //For Praveshan
+        for(let i = 0; i<data.length;i++){
+            data[i].deadline = null;
+        }
+
+
         setTasks(data);
         return data;
     }, [userRole, router]);
@@ -277,7 +285,8 @@ const TasksPage = () => {
                 if (!unlocked) {
                     displayStatus = `🔒 ${status}`;
                 } else if (task.deadline === null) {
-                    displayStatus = `${status} ⚡ (No deadline)`;
+                    //displayStatus = `${status} ⚡ (No deadline)`;
+                    displayStatus = `${status}`;
                 } else {
                     displayStatus = `${status} (${task.deadline} days)`;
                 }
@@ -334,6 +343,7 @@ const TasksPage = () => {
                     setShowReview(true);
                 }
                 setLoading(false);
+
             } catch (error) {
                 console.error('Error initializing:', error);
                 setLoading(false);
@@ -359,6 +369,7 @@ const TasksPage = () => {
             console.log('My submissions:', mySubmissions);
             console.log('Active toggle:', toggles.findIndex(t => t));
             setToggledTasks(formattedTasks);
+            console.log(tasks);
         }
     }, [tasks, getFormattedTasks, mySubmissions, toggles]);
 

@@ -13,6 +13,8 @@ import {
 } from 'react-icons/fa';
 import { useAuth } from '@/app/context/authcontext';
 
+
+
 const API_URL = 'https://amapi.amfoss.in/';
 
 const ProfilePage = () => {
@@ -41,11 +43,12 @@ const ProfilePage = () => {
         router.push('/login');
       }
     };
-    
-    const cachedProfile = sessionStorage.getItem("cache_profile");
-    if (cachedProfile) {
-      setUser(JSON.parse(cachedProfile));
-    } else {
+    const cached_profile = sessionStorage.getItem("cache_profile");
+    if(cached_profile){
+      setUser(JSON.parse(cached_profile));
+    }
+    else{
+
       fetchUser();
     }
   }, [logout, router]);
