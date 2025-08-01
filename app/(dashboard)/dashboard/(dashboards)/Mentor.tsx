@@ -73,15 +73,59 @@ const MentorDashboard = () => {
     const [totaltask, settotaltask] = useState(0);
     const [menteeSubmissions, setMenteeSubmissions] = useState<Record<string, Record<number, string>>>({});
     const [currentTask, setCurrentTask] = useState<Task | null>(null);
+    const [currentTrack, setCurrentTrack] = useState<{id: number; name: string} | null>(null);
+    const [tracks, setTracks] = useState<{id: number; name: string}[]>([]);
 
     // Generate mentee options from context
     const menteeOptions = useMemo<JSX.Element[]>(() => {
+        if (!mentees || mentees.length === 0) {
+            return [<option key="no-mentees" value="">No mentees available</option>];
+        }
+        
         return mentees.map((mentee, index) => (
             <option key={index} value={mentee.name}>{mentee.name}</option>
         ));
     }, [mentees]);
 
-    // Calculate submitted tasks count for a mentee
+    // Fetch available tracks
+    const fetchTracks = useCallback(async () => {
+        try {
+            const response = await fetch('https://amapi.amfoss.in/tracks/');
+            if (!response.ok) throw new Error('Failed to fetch tracks');
+            const tracksData = await response.json();
+            setTracks(tracksData.map((track: any) => ({ id: track.id, name: track.title })));
+            
+            // Set initial track from session storage or default to track 1
+            const savedTrack = sessionStorage.getItem('mentorCurrentTrack');
+            if (savedTrack) {
+                setCurrentTrack(JSON.parse(savedTrack));
+            } else {
+                const defaultTrack = { id: 1, name: tracksData.find((t: any) => t.id === 1)?.title || 'Track 1' };
+                setCurrentTrack(defaultTrack);
+                sessionStorage.setItem('mentorCurrentTrack', JSON.stringify(defaultTrack));
+            }
+        } catch (error) {
+            console.error('Error fetching tracks:', error);
+            // Fallback to default track 1
+            const defaultTrack = { id: 1, name: 'Track 1' };
+            setCurrentTrack(defaultTrack);
+            sessionStorage.setItem('mentorCurrentTrack', JSON.stringify(defaultTrack));
+        }
+    }, []);
+
+    // Handle track change
+    const handleTrackChange = useCallback((event: React.ChangeEvent<HTMLSelectElement>) => {
+        const trackId = parseInt(event.target.value);
+        const selectedTrack = tracks.find(track => track.id === trackId);
+        if (selectedTrack) {
+            setCurrentTrack(selectedTrack);
+            sessionStorage.setItem('mentorCurrentTrack', JSON.stringify(selectedTrack));
+            // Reset current task when track changes
+            setCurrentTask(null);
+            // Trigger refetch of tasks and submissions
+            setLoading(true);
+        }
+    }, [tracks]);    // Calculate submitted tasks count for a mentee
     const getSubmittedTasksCount = useCallback((menteeName: string): number => {
         if (!menteeSubmissions[menteeName]) return 0;
         
@@ -109,7 +153,7 @@ const MentorDashboard = () => {
         
         return tasks.map((task) => {
             const status = menteeSubmissions[menteeName][task.id] || 'Not Started';
-            return [task.id.toString(), task.title, status];
+            return [(task.task_no + 1).toString(), task.title, status];
         });
     };
 
@@ -190,8 +234,8 @@ const MentorDashboard = () => {
 
     const fetchMenteeDetails = async (menteeName: string) => {
         try {
-            const currentTrack = sessionStorage.getItem("currentTrack");
-            const track: { id: number; name: string } = currentTrack ? JSON.parse(currentTrack) : { id: 1, name: "" };
+            const mentorTrack = sessionStorage.getItem("mentorCurrentTrack");
+            const track: { id: number; name: string } = mentorTrack ? JSON.parse(mentorTrack) : { id: 1, name: "" };
             
             const data = await fetch(`https://amapi.amfoss.in/leaderboard/${track.id}`);
             if (!data.ok) {
@@ -232,7 +276,7 @@ const MentorDashboard = () => {
 
     const fetchTasks = async () => {
         try {
-            const trackId = 1; // Mentors use track 1
+            const trackId = currentTrack?.id || 1; // Use current track or fallback to 1
             
             const response = await fetch(`https://amapi.amfoss.in/tracks/${trackId}/tasks`);
             
@@ -251,10 +295,15 @@ const MentorDashboard = () => {
         }
     };
 
-    // Fetch tasks and submissions when mentees are loaded
+    // Initialize tracks when component mounts
+    useEffect(() => {
+        fetchTracks();
+    }, [fetchTracks]);
+
+    // Fetch tasks and submissions when mentees are loaded or track changes
     useEffect(() => {
         const initData = async () => {
-            if (!menteesLoading && mentees.length > 0) {
+            if (!menteesLoading && mentees.length > 0 && currentTrack) {
                 const fetchedTasks = await fetchTasks();
                 if (fetchedTasks.length > 0) {
                     await fetchMenteeSubmissions(mentees, fetchedTasks);
@@ -264,7 +313,7 @@ const MentorDashboard = () => {
         };
         setLoading(true);
         initData();
-    }, [menteesLoading, mentees]);
+    }, [menteesLoading, mentees, currentTrack]);
 
     // Fetch mentee details when selected mentee changes
     useEffect(() => {
@@ -297,17 +346,35 @@ const MentorDashboard = () => {
         <div className="text-white p-4 md:p-2 lg:p-0">
             <div className="h-full w-full m-auto scrollbar-hide max-w-[80rem]">
                 <div className="flex flex-col sm:flex-row justify-between">
-                    <div className="flex text-xl sm:text-2xl md:text-3xl gap-1 mb-4 sm:mb-0">
-                        <h1>Welcome, </h1>
-                        <h1 className="text-primary-yellow">Mentor</h1>
+                    <div className="flex flex-col sm:flex-row gap-2 sm:gap-4 items-start sm:items-center mb-4 sm:mb-0">
+                        <div className="flex text-xl sm:text-2xl md:text-3xl gap-1">
+                            <h1>Welcome, </h1>
+                            <h1 className="text-primary-yellow">Mentor</h1>
+                        </div>
+                        {currentTrack && (
+                            <div className="text-sm text-gray-400">
+                                Track: {currentTrack.name}
+                            </div>
+                        )}
                     </div>
-                    <select 
-                        className="bg-deeper-grey rounded-lg text-primary-yellow px-3 py-2 sm:px-4 md:px-6 md:py-3 w-full sm:w-auto mb-6 sm:mb-0"
-                        value={selectedMentee || ''}
-                        onChange={(e) => setSelectedMentee(e.target.value)}
-                    >
-                        {menteeOptions}
-                    </select>
+                    <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
+                        <select 
+                            className="bg-deeper-grey rounded-lg text-primary-yellow px-3 py-2 sm:px-4 md:px-6 md:py-3 w-full sm:w-auto mb-3 sm:mb-0"
+                            value={currentTrack?.id || 1}
+                            onChange={handleTrackChange}
+                        >
+                            {tracks.map(track => (
+                                <option key={track.id} value={track.id}>{track.name}</option>
+                            ))}
+                        </select>
+                        <select 
+                            className="bg-deeper-grey rounded-lg text-primary-yellow px-3 py-2 sm:px-4 md:px-6 md:py-3 w-full sm:w-auto mb-6 sm:mb-0"
+                            value={selectedMentee || ''}
+                            onChange={(e) => setSelectedMentee(e.target.value)}
+                        >
+                            {menteeOptions}
+                        </select>
+                    </div>
                 </div>
                 <div className="flex justify-between mt-4 sm:mt-6 md:mt-10">
                     <CurrentTask

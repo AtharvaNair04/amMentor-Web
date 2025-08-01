@@ -64,7 +64,7 @@ export default function CurrentTask({ mentor = false, task, status , isLoading }
                     {mentor ? "LATEST SUBMITTED TASK" : "CURRENT TASK"}
                 </h3>
                 <h2 className="font-bold text-lg sm:text-xl md:text-3xl mt-1 sm:mt-2 md:mt-5">
-                    Task-{task.id.toString().padStart(2, '0')}
+                    Task-{(task.task_no + 1).toString().padStart(2, '0')}
                 </h2>
                 <h1 className="font-extralight text-xl sm:text-2xl md:text-4xl lg:text-5xl leading-tight">
                     {task.title.toUpperCase()}

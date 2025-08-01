@@ -62,7 +62,6 @@ const TasksPageContent = () => {
     const getUserEmail = (): string | null => {
         if (typeof window !== 'undefined') {
             const email = localStorage.getItem('email');
-            console.log('Found email in localStorage:', email);
             return email;
         }
         return null;
@@ -73,31 +72,21 @@ const TasksPageContent = () => {
     const isTaskUnlocked = useCallback((taskId: number): boolean => {
         if (ismentor) return true;
         
-        if (taskId <= 1) return true;
+        if (taskId <= 0) return true;
         
         const previousTaskId = taskId - 1;
-        const previousTask = tasks.find(task => task.id === previousTaskId);
+        const previousTask = tasks.find(task => task.task_no === previousTaskId);
         
         if (!previousTask) {
-            console.log(`Task ${taskId} locked because previous task ${previousTaskId} not found`);
             return false;
         }
         
         if (previousTask.deadline === null) {
-            console.log(`Task ${taskId} unlocked because previous task ${previousTaskId} has null deadline`);
             return true;
         }
         
         const previousTaskStatus = mySubmissions[previousTaskId];
-        console.log(`DEBUG: Checking task ${taskId} unlock:`);
-        console.log(`- Previous task ID: ${previousTaskId}`);
-        console.log(`- Previous task status: "${previousTaskStatus}"`);
-        console.log(`- All submissions:`, mySubmissions);
-        console.log(`- Status check: Submitted=${previousTaskStatus === 'Submitted'}, Reviewed=${previousTaskStatus === 'Reviewed'}`);
-        
         const isUnlocked = previousTaskStatus === 'Submitted' || previousTaskStatus === 'Reviewed';
-        
-        console.log(`- Final unlock result: ${isUnlocked}`);
         
         return isUnlocked;
     }, [ismentor, mySubmissions, tasks]);
@@ -136,7 +125,6 @@ const TasksPageContent = () => {
 
     const fetchSelectedMenteeSubmissions = useCallback(async (trackId: number, tasksList: Task[]) => {
         if (!selectedMentee || !selectedMenteeEmail) {
-            console.log('No selected mentee, skipping submission fetch');
             return;
         }
 
@@ -148,24 +136,23 @@ const TasksPageContent = () => {
             
             if (res.ok) {
                 const submissions: Submission[] = await res.json();
-                console.log(`Fetched ${submissions.length} submissions for ${selectedMentee} in track ${trackId}`);
                 
                 for (const task of tasksList) {
-                    const taskSubmission = submissions.find((s: Submission) => s.task_id === task.id);
+                    const taskSubmission = submissions.find((s: Submission) => s.task_id === task.task_no);
                     const rawStatus = taskSubmission?.status || 'Not Started';
                     const normalizedStatus = normalizeStatus(rawStatus);
-                    results[selectedMentee][task.id] = normalizedStatus;
+                    results[selectedMentee][task.task_no] = normalizedStatus;
                 }
             } else {
                 console.error(`Failed to fetch submissions for ${selectedMentee}:`, res.status);
                 for (const task of tasksList) {
-                    results[selectedMentee][task.id] = 'Not Started';
+                    results[selectedMentee][task.task_no] = 'Not Started';
                 }
             }
         } catch (error) {
             console.error(`Error fetching submissions for ${selectedMentee}:`, error);
             for (const task of tasksList) {
-                results[selectedMentee][task.id] = 'Not Started';
+                results[selectedMentee][task.task_no] = 'Not Started';
             }
         }
         
@@ -175,48 +162,41 @@ const TasksPageContent = () => {
     const fetchMySubmissions = useCallback(async (trackId: number, tasksList: Task[]) => {
         const userEmail = getUserEmail();
         if (!userEmail) {
-            console.log('No user email found');
             return;
         }
-        
-        console.log('Fetching all submissions for email:', userEmail, 'trackId:', trackId);
         
         const results: Record<number, string> = {};
         
         try {
             const res = await fetch(`https://amapi.amfoss.in/submissions/?email=${encodeURIComponent(userEmail)}&track_id=${trackId}`);
-            console.log(`Fetching submissions for track ${trackId}, response status:`, res.status);
             
             if (res.ok) {
                 const submissions: Submission[] = await res.json();
-                console.log(`Fetched ${submissions.length} total submissions for track ${trackId}:`, submissions);
                 
                 for (const task of tasksList) {
-                    const taskSubmission = submissions.find((s: Submission) => s.task_id === task.id);
+                    const taskSubmission = submissions.find((s: Submission) => s.task_id === task.task_no);
                     
                     if (taskSubmission) {
                         const rawStatus = taskSubmission.status;
                         const normalizedStatus = normalizeStatus(rawStatus);
-                        console.log(`Task ${task.id}: "${rawStatus}" -> "${normalizedStatus}"`);
-                        results[task.id] = normalizedStatus;
+                        results[task.task_no] = normalizedStatus;
                     } else {
-                        results[task.id] = 'Not Started';
+                        results[task.task_no] = 'Not Started';
                     }
                 }
             } else {
                 console.error(`Failed to fetch submissions for track ${trackId}:`, res.status);
                 for (const task of tasksList) {
-                    results[task.id] = 'Not Started';
+                    results[task.task_no] = 'Not Started';
                 }
             }
         } catch (error) {
             console.error(`Error fetching submissions for track ${trackId}:`, error);
             for (const task of tasksList) {
-                results[task.id] = 'Not Started';
+                results[task.task_no] = 'Not Started';
             }
         }
         
-        console.log('Final results:', results);
         setMySubmissions(results);
     }, []);
 
@@ -227,9 +207,9 @@ const TasksPageContent = () => {
             let status: string;
             
             if (ismentor && selectedMentee && menteeSubmissions[selectedMentee]) {
-                status = menteeSubmissions[selectedMentee][task.id] || 'Not Started';
+                status = menteeSubmissions[selectedMentee][task.task_no] || 'Not Started';
             } else if (!ismentor && Object.keys(mySubmissions).length > 0) {
-                status = mySubmissions[task.id] || 'Not Started';
+                status = mySubmissions[task.task_no] || 'Not Started';
             } else {
                 status = 'Not Started';
             }
@@ -260,11 +240,11 @@ const TasksPageContent = () => {
         
         return filteredTasks.map((task) => {
             if (ismentor && selectedMentee && menteeSubmissions[selectedMentee]) {
-                const status = menteeSubmissions[selectedMentee][task.id] || 'Not Started';
-                return [task.id.toString(), task.title, status];
+                const status = menteeSubmissions[selectedMentee][task.task_no] || 'Not Started';
+                return [(task.task_no + 1).toString(), task.title, status];
             } else if (!ismentor && Object.keys(mySubmissions).length > 0) {
-                const status = mySubmissions[task.id] || 'Not Started';
-                const unlocked = isTaskUnlocked(task.id);
+                const status = mySubmissions[task.task_no] || 'Not Started';
+                const unlocked = isTaskUnlocked(task.task_no);
                 
                 let displayStatus = status;
                 if (!unlocked) {
@@ -275,9 +255,9 @@ const TasksPageContent = () => {
                     displayStatus = `${status} (${task.deadline} days)`;
                 }
                 
-                return [task.id.toString(), task.title, displayStatus];
+                return [(task.task_no + 1).toString(), task.title, displayStatus];
             } else {
-                return [task.id.toString(), task.title, ""];
+                return [(task.task_no + 1).toString(), task.title, ""];
             }
         });
     }, [getFilteredTasks, ismentor, selectedMentee, menteeSubmissions, mySubmissions, isTaskUnlocked]);
@@ -300,7 +280,19 @@ const TasksPageContent = () => {
                 // Get track ID once
                 let trackId;
                 if (userRole === 'Mentor') {
-                    trackId = 1;
+                    // Get mentor's selected track from session storage
+                    const mentorTrack = sessionStorage.getItem('mentorCurrentTrack');
+                    if (mentorTrack) {
+                        const trackData = JSON.parse(mentorTrack);
+                        trackId = trackData.id;
+                        setCurrentTrack(trackData);
+                    } else {
+                        // Fallback to track 1 if no track selected
+                        trackId = 1;
+                        const defaultTrack = { id: 1, name: 'Track 1' };
+                        setCurrentTrack(defaultTrack);
+                        sessionStorage.setItem('mentorCurrentTrack', JSON.stringify(defaultTrack));
+                    }
                 } else {
                     const sessionTrack = sessionStorage.getItem('currentTrack');
                     if (sessionTrack) {
@@ -334,7 +326,9 @@ const TasksPageContent = () => {
     // Separate effect to handle mentee selection changes
     useEffect(() => {
         if (ismentor && !menteesLoading && selectedMentee && selectedMenteeEmail && tasks.length > 0) {
-            const trackId = 1; // Mentors use track 1
+            // Get mentor's current track
+            const mentorTrack = sessionStorage.getItem('mentorCurrentTrack');
+            const trackId = mentorTrack ? JSON.parse(mentorTrack).id : 1;
             fetchSelectedMenteeSubmissions(trackId, tasks);
         }
     }, [selectedMentee, selectedMenteeEmail, menteesLoading, ismentor, tasks, fetchSelectedMenteeSubmissions]);
@@ -343,9 +337,6 @@ const TasksPageContent = () => {
     useEffect(() => {
         if (tasks.length > 0) {
             const formattedTasks = getFormattedTasks();
-            console.log('Formatted tasks for current toggle:', formattedTasks);
-            console.log('My submissions:', mySubmissions);
-            console.log('Active toggle:', toggles.findIndex(t => t));
             setToggledTasks(formattedTasks);
         }
     }, [tasks, getFormattedTasks, mySubmissions, toggles]);
@@ -377,20 +368,20 @@ const TasksPageContent = () => {
             setShowReview(true);
         } else {
             const taskIdNum = parseInt(taskId);
-            if (!isTaskUnlocked(taskIdNum)) {
-                const previousTaskId = taskIdNum - 1;
-                const previousTask = tasks.find(task => task.id === previousTaskId);
+            if (!isTaskUnlocked(taskIdNum - 1)) {
+                const previousTaskId = taskIdNum - 2;
+                const previousTask = tasks.find(task => task.task_no === previousTaskId);
                 
                 if (previousTask && previousTask.deadline === null) {
-                    alert(`Task ${previousTaskId} ("${previousTask.title}") has no deadline and should automatically unlock this task. If you're seeing this error, please refresh the page or contact support.`);
+                    alert(`Task ${previousTaskId + 1} ("${previousTask.title}") has no deadline and should automatically unlock this task. If you're seeing this error, please refresh the page or contact support.`);
                 } else {
-                    const previousTaskTitle = previousTask ? `"${previousTask.title}"` : previousTaskId.toString();
-                    alert(`You must complete Task ${previousTaskId} (${previousTaskTitle}) before accessing this task.`);
+                    const previousTaskTitle = previousTask ? `"${previousTask.title}"` : (previousTaskId + 1).toString();
+                    alert(`You must complete Task ${previousTaskId + 1} (${previousTaskTitle}) before accessing this task.`);
                 }
                 return;
             }
             
-            setSelectedTaskId(taskId);
+            setSelectedTaskId((taskIdNum - 1).toString());
             setShowReview(true);
         }
     };
@@ -484,9 +475,6 @@ const TasksPageContent = () => {
     useEffect(() => {
         if (tasks.length > 0) {
             const formattedTasks = getFormattedTasks();
-            console.log('Formatted tasks for current toggle:', formattedTasks);
-            console.log('My submissions:', mySubmissions);
-            console.log('Active toggle:', toggles.findIndex(t => t));
             setToggledTasks(formattedTasks);
         }
     }, [tasks, getFormattedTasks, mySubmissions, toggles]);

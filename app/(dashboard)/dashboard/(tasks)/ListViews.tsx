@@ -4,7 +4,7 @@ function ReviewedTask({reviewed_tasks, isLoading}:{reviewed_tasks:string[][] ,is
             key={task[0]}
             className="bg-deep-grey rounded-lg sm:rounded-xl md:rounded-2xl font-bold hover:bg-primary-yellow">
             <div className="flex justify-between p-2 sm:p-3 hover:text-black text-sm sm:text-base">
-                <h1>{task[0]}</h1> {/* Task ID */}
+                <h1>Task-{task[0].padStart(2, '0')}</h1> {/* Formatted Task ID */}
                 <h1>{task[1]}</h1> {/* Task Title */}
             </div>
         </div>
@@ -26,7 +26,7 @@ function UpcomingTask({upcoming_tasks, isLoading}:{upcoming_tasks:string[][],isL
             key={task[0]} 
             className="bg-deep-grey rounded-lg sm:rounded-xl md:rounded-2xl font-bold hover:bg-primary-yellow">
             <div className="flex justify-between p-2 sm:p-3 hover:text-black text-sm sm:text-base">
-                <h1>{task[0]}</h1> {/* Task ID */}
+                <h1>Task-{task[0].padStart(2, '0')}</h1> {/* Formatted Task ID */}
                 <h1>{task[1]}</h1> {/* Task Title */}
             </div>
         </div>
