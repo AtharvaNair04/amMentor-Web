@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { ReviewedTask, UpcomingTask } from "../(tasks)/ListViews";
 import CurrentTask from "../(tasks)/CurrentTask";
-import Badges from "../(user)/Badges";
 import PlayerStats from "../(user)/PlayerStats";
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
@@ -206,6 +205,7 @@ const MenteeDashboard = () => {
         setLoading(true);
         fetchMenteeDetails();
         fetchTasks();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [router]);
 
     // Update current task when submissions change
@@ -214,6 +214,7 @@ const MenteeDashboard = () => {
             const current = getCurrentTask();
             setCurrentTask(current);
         }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [tasks, mySubmissions]);
 
     return (

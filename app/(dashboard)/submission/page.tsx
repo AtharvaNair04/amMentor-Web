@@ -351,7 +351,7 @@ const TasksPage = () => {
         };
 
         init();
-    }, [isLoggedIn, router, ismentor, fetchTasks, fetchSelectedMenteeSubmissions, fetchMySubmissions, menteesLoading, selectedMentee, selectedMenteeEmail, userRole]);
+    }, [isLoggedIn, router, ismentor, fetchTasks, fetchSelectedMenteeSubmissions, fetchMySubmissions, menteesLoading, selectedMentee, selectedMenteeEmail, userRole, searchParams]);
 
     // Separate effect to handle mentee selection changes
     useEffect(() => {

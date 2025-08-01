@@ -2,7 +2,6 @@
 
 import { ReviewedTask, FeedbackProvided, UpcomingTask } from "../(tasks)/ListViews";
 import CurrentTask from "../(tasks)/CurrentTask";
-import Badges from "../(user)/Badges";
 import PlayerProgress from "../(user)/PlayerProgress";
 import PlayerStats from "../(user)/PlayerStats";
 import { JSX, useEffect, useMemo, useState, useCallback } from 'react';
