@@ -553,7 +553,7 @@ const TasksPage = () => {
     );
 };
 
-// Wrapper component with Suspense boundary
+// Wrapper component with Suspense boundary - moved the Suspense to wrap the entire page
 const TasksPageWrapper = () => {
     return (
         <Suspense fallback={
