@@ -1,3 +1,7 @@
+'use client';
+
+import { useRouter } from 'next/navigation';
+
 interface Task {
     track_id: number;
     task_no: number;
@@ -16,6 +20,8 @@ interface CurrentTaskProps {
 }
 
 export default function CurrentTask({ mentor = false, task, status , isLoading }: CurrentTaskProps) {
+    const router = useRouter();
+    
     const formatDeadline = (deadline: string | number | null): string => {
         if (!deadline) return "No deadline";
         if (typeof deadline === 'number') return `${deadline} days`;
@@ -38,6 +44,13 @@ export default function CurrentTask({ mentor = false, task, status , isLoading }
         return "bg-dark-grey";
     };
 
+    const handleTaskClick = () => {
+        if (task) {
+            const taskNumber = task.task_no; 
+            router.push(`/submission?page=${taskNumber}`);
+        }
+    };
+
     if (!task) {
         return (
             <div className="flex flex-col sm:flex-row h-auto sm:h-40 md:h-48 rounded-xl md:rounded-3xl text-white w-full bg-deeper-grey justify-center items-center p-4 md:px-8 md:py-3">
@@ -58,7 +71,10 @@ export default function CurrentTask({ mentor = false, task, status , isLoading }
     }
 
     return (
-        <div className="flex flex-col sm:flex-row h-auto sm:h-40 md:h-48 rounded-xl md:rounded-3xl text-black w-full bg-primary-yellow justify-between p-4 md:px-8 md:py-3">
+        <div 
+            className="flex flex-col sm:flex-row h-auto sm:h-40 md:h-48 rounded-xl md:rounded-3xl text-black w-full bg-primary-yellow justify-between p-4 md:px-8 md:py-3 cursor-pointer hover:bg-yellow-400 transition-colors duration-200"
+            onClick={handleTaskClick}
+        >
             <div className="h-full mb-4 sm:mb-0">
                 <h3 className="font-bold text-xs sm:text-sm md:text-base">
                     {mentor ? "LATEST SUBMITTED TASK" : "CURRENT TASK"}
@@ -87,7 +103,13 @@ export default function CurrentTask({ mentor = false, task, status , isLoading }
                         </div>
                     )}
                 </div>
-                <button className={`${getButtonColor()} text-white font-extrabold rounded-xl md:rounded-3xl pb-1 mt-2 sm:mt-1 md:mt-0`}>
+                <button 
+                    className={`${getButtonColor()} text-white font-extrabold rounded-xl md:rounded-3xl pb-1 mt-2 sm:mt-1 md:mt-0 hover:opacity-80 transition-opacity duration-200`}
+                    onClick={(e) => {
+                        e.stopPropagation(); // Prevent triggering the parent div's onClick
+                        handleTaskClick();
+                    }}
+                >
                     <div className="bg-deep-grey rounded-xl md:rounded-3xl px-3 sm:px-4 md:px-5 py-2 md:py-3">
                         <h1 className="text-sm sm:text-base">{getButtonText()}</h1>
                     </div>
