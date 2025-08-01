@@ -80,7 +80,6 @@ const TaskDetails = ({
         const startData: TaskStartData = JSON.parse(storedStartData);
         setStartDate(startData.startDate);
         setHasStarted(true);
-        console.log('Loaded start date from storage:', startData.startDate);
       } catch (error) {
         console.error('Error parsing stored start data:', error);
       }
@@ -124,26 +123,17 @@ const TaskDetails = ({
     
     // If previous task doesn't exist, don't unlock
     if (!previousTask) {
-      console.log(`Task ${currentId} locked because previous task ${previousTaskId} not found`);
       return false;
     }
     
     // CRITICAL FIX: If previous task has null deadline, current task is automatically unlocked
     if (previousTask.deadline === null) {
-      console.log(`Task ${currentId} unlocked because previous task ${previousTaskId} has null deadline`);
       return true;
     }
     
     // Otherwise, check if previous task is completed
     const previousTaskStatus = allSubmissions[previousTaskId];
     const isUnlocked = previousTaskStatus === 'Submitted' || previousTaskStatus === 'Reviewed';
-    
-    console.log(`Task ${currentId} unlock check:`, {
-      previousTaskId,
-      previousTaskDeadline: previousTask.deadline,
-      previousTaskStatus,
-      isUnlocked
-    });
     
     return isUnlocked;
   };
@@ -185,8 +175,6 @@ const TaskDetails = ({
     // Update component state
     setStartDate(currentStartDate);
     setHasStarted(true);
-    
-    console.log('Task started:', startData);
     
     // Optionally, you can also send this to your backend API here
     try {
@@ -243,8 +231,6 @@ const TaskDetails = ({
       start_date: submissionStartDate, // Use the stored start date
       mentee_email: email,
     };
-
-    console.log('Submitting with start date:', submissionStartDate);
 
     try {
       const res = await fetch('https://amapi.amfoss.in/progress/submit-task', {
