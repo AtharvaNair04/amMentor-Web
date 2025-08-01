@@ -3,10 +3,9 @@
 import Link from "next/link";
 import { ReviewedTask, UpcomingTask } from "../(tasks)/ListViews";
 import CurrentTask from "../(tasks)/CurrentTask";
-import Badges from "../(user)/Badges";
 import PlayerStats from "../(user)/PlayerStats";
 import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 
 interface Task {
     track_id: number;
@@ -62,7 +61,7 @@ const MenteeDashboard = () => {
         return localStorage.getItem('email');
     };
 
-    const isTaskUnlocked = (taskId: number): boolean => {
+    const isTaskUnlocked = useCallback((taskId: number): boolean => {
         if (taskId <= 1) return true;
         
         const previousTaskId = taskId - 1;
@@ -74,9 +73,9 @@ const MenteeDashboard = () => {
         
         const previousTaskStatus = mySubmissions[previousTaskId];
         return previousTaskStatus === 'Submitted' || previousTaskStatus === 'Reviewed';
-    };
+    }, [tasks, mySubmissions]);
 
-    const getCurrentTask = (): Task | null => {
+    const getCurrentTask = useCallback((): Task | null => {
         // Find the latest unlocked task that is not reviewed
         const unlockedTasks = tasks.filter(task => isTaskUnlocked(task.id));
         const currentTasks = unlockedTasks.filter(task => {
@@ -86,7 +85,7 @@ const MenteeDashboard = () => {
         
         // Return the latest (highest ID) current task
         return currentTasks.length > 0 ? currentTasks[currentTasks.length - 1] : null;
-    };
+    }, [tasks, mySubmissions, isTaskUnlocked]);
 
     const getFormattedTasks = (): string[][] => {
         return tasks.map((task) => {
@@ -116,7 +115,7 @@ const MenteeDashboard = () => {
         return formattedTasks.filter(task => task[2] === 'Reviewed');
     };
 
-    const fetchMySubmissions = async (tasksList: Task[], trackId: number) => {
+    const fetchMySubmissions = useCallback(async (tasksList: Task[], trackId: number) => {
         const userEmail = getUserEmail();
         if (!userEmail) return;
         
@@ -145,7 +144,7 @@ const MenteeDashboard = () => {
             }
         }
         setMySubmissions(results);
-    };
+    }, []);
 
     useEffect(() => {
         const fetchMenteeDetails = async () => {
@@ -211,6 +210,7 @@ const MenteeDashboard = () => {
         setLoading(true);
         fetchMenteeDetails();
         fetchTasks();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [router]);
 
     // Update current task when submissions change
@@ -219,6 +219,7 @@ const MenteeDashboard = () => {
             const current = getCurrentTask();
             setCurrentTask(current);
         }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [tasks, mySubmissions]);
 
     return (
@@ -247,7 +248,7 @@ const MenteeDashboard = () => {
                     </div>
                     <div className="flex flex-col gap-2 w-full lg:w-[46%]">
                         <UpcomingTask isLoading={loading} upcoming_tasks={getUpcomingTasks()} />
-                        <Badges />
+                        {/* <Badges /> */}
                     </div>
                 </div>
             </div>
