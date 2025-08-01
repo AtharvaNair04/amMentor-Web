@@ -315,12 +315,6 @@ const TaskDetails = ({
   // Update canEdit logic to use the corrected unlock status
   const canEditTask = !isMentor && taskUnlocked && (taskStatus === 'In Progress' || taskStatus === 'Not Started') && hasStarted;
 
-  // Calculate days remaining for display
-  const getDaysRemaining = (): number => {
-    if (!task?.deadline || !startDate) return 0;
-    return Math.max(0, task.deadline - daysElapsed);
-  };
-
   // const getProgressColor = (): string => {
   //   if (!task?.deadline) return 'green';
   //   const remaining = getDaysRemaining();
