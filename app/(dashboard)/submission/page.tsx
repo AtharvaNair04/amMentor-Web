@@ -282,8 +282,6 @@ const TasksPageContent = () => {
         });
     }, [getFilteredTasks, ismentor, selectedMentee, menteeSubmissions, mySubmissions, isTaskUnlocked]);
 
-    const [toggledTasks, setToggledTasks] = useState<string[][]>([]);
-
     // Updated useEffect with optimized API calls
     useEffect(() => {
         if (!isLoggedIn) {
