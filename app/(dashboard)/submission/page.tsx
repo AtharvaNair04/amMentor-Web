@@ -59,7 +59,6 @@ const TasksPageContent = () => {
     const [mySubmissions, setMySubmissions] = useState<Record<number, string>>({});
     const [currentTrack, setCurrentTrack] = useState<{id: number; name: string} | null>(null);
     const [toggledTasks, setToggledTasks] = useState<string[][]>([]);
-
     const getUserEmail = (): string | null => {
         if (typeof window !== 'undefined') {
             const email = localStorage.getItem('email');
@@ -282,6 +281,78 @@ const TasksPageContent = () => {
             }
         });
     }, [getFilteredTasks, ismentor, selectedMentee, menteeSubmissions, mySubmissions, isTaskUnlocked]);
+
+    const [toggledTasks, setToggledTasks] = useState<string[][]>([]);
+
+    // Updated useEffect with optimized API calls
+    useEffect(() => {
+        if (!isLoggedIn) {
+            router.push('/');
+            return;
+        }
+
+        const init = async () => {
+            try {
+                const fetchedTasks = await fetchTasks();
+                if (fetchedTasks.length === 0) {
+                    setLoading(false);
+                    return;
+                }
+
+                // Get track ID once
+                let trackId;
+                if (userRole === 'Mentor') {
+                    trackId = 1;
+                } else {
+                    const sessionTrack = sessionStorage.getItem('currentTrack');
+                    if (sessionTrack) {
+                        const trackData = JSON.parse(sessionTrack);
+                        trackId = trackData.id;
+                        setCurrentTrack(trackData);
+                    }
+                }
+
+                if (ismentor) {
+                    // Wait for mentees to load, then fetch submissions for selected mentee
+                    if (!menteesLoading && selectedMentee && selectedMenteeEmail) {
+                        await fetchSelectedMenteeSubmissions(trackId, fetchedTasks);
+                    }
+                } else {
+                    // Pass trackId and tasks to optimized function
+                    if (trackId) {
+                        await fetchMySubmissions(trackId, fetchedTasks);
+                    }
+                }
+                setLoading(false);
+            } catch (error) {
+                console.error('Error initializing:', error);
+                setLoading(false);
+            }
+        };
+
+        init();
+    }, [isLoggedIn, router, ismentor, fetchTasks, fetchSelectedMenteeSubmissions, fetchMySubmissions, menteesLoading, selectedMentee, selectedMenteeEmail, userRole]);
+
+    // Separate effect to handle mentee selection changes
+    useEffect(() => {
+        if (ismentor && !menteesLoading && selectedMentee && selectedMenteeEmail && tasks.length > 0) {
+            const trackId = 1; // Mentors use track 1
+            fetchSelectedMenteeSubmissions(trackId, tasks);
+        }
+    }, [selectedMentee, selectedMenteeEmail, menteesLoading, ismentor, tasks, fetchSelectedMenteeSubmissions]);
+
+    // Update toggledTasks whenever tasks, submissions, or toggles change
+    useEffect(() => {
+        if (tasks.length > 0) {
+            const formattedTasks = getFormattedTasks();
+            console.log('Formatted tasks for current toggle:', formattedTasks);
+            console.log('My submissions:', mySubmissions);
+            console.log('Active toggle:', toggles.findIndex(t => t));
+            setToggledTasks(formattedTasks);
+        }
+    }, [tasks, getFormattedTasks, mySubmissions, toggles]);
+
+    // Simplified getFilteredMentees - now only returns data for the selected mentee
 
     const getFilteredMentees = useCallback((): string[][][] => {
         if (!ismentor || tasks.length === 0 || !selectedMentee) return [];
