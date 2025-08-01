@@ -5,7 +5,7 @@ import TasksViewer from "./(tasks)/submissionitems";
 import { useAuth } from "@/app/context/authcontext";
 import { useMentee } from "@/app/context/menteeContext";
 
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 
 import SubmissionReview from "./(review)/review";
 
@@ -47,7 +47,6 @@ const TasksPage = () => {
         selectedMenteeEmail, 
         isLoading: menteesLoading 
     } = useMentee();
-    const searchParams = useSearchParams();
     const router = useRouter();
     const [toggles, setToggles] = useState([true, false, false]);
     const [showReview, setShowReview] = useState(false);
@@ -337,10 +336,16 @@ const TasksPage = () => {
                         await fetchMySubmissions(trackId, fetchedTasks);
                     }
                 }
-                if(searchParams.has("page")){
-                    setSelectedTaskId(searchParams.get("page"));
-                    setSelectedMenteeId(selectedMenteeEmail);
-                    setShowReview(true);
+                
+                // Check for page parameter in URL (client-side only)
+                if (typeof window !== 'undefined') {
+                    const urlParams = new URLSearchParams(window.location.search);
+                    const pageParam = urlParams.get('page');
+                    if (pageParam) {
+                        setSelectedTaskId(pageParam);
+                        setSelectedMenteeId(selectedMenteeEmail);
+                        setShowReview(true);
+                    }
                 }
                 setLoading(false);
 
@@ -351,7 +356,7 @@ const TasksPage = () => {
         };
 
         init();
-    }, [isLoggedIn, router, ismentor, fetchTasks, fetchSelectedMenteeSubmissions, fetchMySubmissions, menteesLoading, selectedMentee, selectedMenteeEmail, userRole, searchParams]);
+    }, [isLoggedIn, router, ismentor, fetchTasks, fetchSelectedMenteeSubmissions, fetchMySubmissions, menteesLoading, selectedMentee, selectedMenteeEmail, userRole]);
 
     // Separate effect to handle mentee selection changes
     useEffect(() => {
