@@ -23,11 +23,6 @@ interface MenteeDetails {
     total_points: number;
 }
 
-interface Submission {
-    task_id: number;
-    status: string;
-}
-
 interface SubmissionData {
     id: number;
     task_id: number;

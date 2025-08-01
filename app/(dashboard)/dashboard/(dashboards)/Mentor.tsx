@@ -18,6 +18,11 @@ interface Task {
     id: number;
 }
 
+interface TrackData {
+    id: number;
+    title: string;
+}
+
 interface MenteeDetails {
     tasks_completed: number;
     mentee_name: string;
@@ -92,15 +97,15 @@ const MentorDashboard = () => {
         try {
             const response = await fetch('https://amapi.amfoss.in/tracks/');
             if (!response.ok) throw new Error('Failed to fetch tracks');
-            const tracksData = await response.json();
-            setTracks(tracksData.map((track: any) => ({ id: track.id, name: track.title })));
+            const tracksData: TrackData[] = await response.json();
+            setTracks(tracksData.map((track: TrackData) => ({ id: track.id, name: track.title })));
             
             // Set initial track from session storage or default to track 1
             const savedTrack = sessionStorage.getItem('mentorCurrentTrack');
             if (savedTrack) {
                 setCurrentTrack(JSON.parse(savedTrack));
             } else {
-                const defaultTrack = { id: 1, name: tracksData.find((t: any) => t.id === 1)?.title || 'Track 1' };
+                const defaultTrack = { id: 1, name: tracksData.find((t: TrackData) => t.id === 1)?.title || 'Track 1' };
                 setCurrentTrack(defaultTrack);
                 sessionStorage.setItem('mentorCurrentTrack', JSON.stringify(defaultTrack));
             }
@@ -177,7 +182,7 @@ const MentorDashboard = () => {
     const [menteeFullSubmissions, setMenteeFullSubmissions] = useState<Record<string, SubmissionData[]>>({});
 
     // Update the fetchMenteeSubmissions function to store full submission data
-    const fetchMenteeSubmissions = async (menteesList: { name: string; email: string }[], tasksList: Task[]) => {
+    const fetchMenteeSubmissions = useCallback(async (menteesList: { name: string; email: string }[], tasksList: Task[]) => {
         const statusResults: Record<string, Record<number, string>> = {};
         const fullSubmissionsResults: Record<string, SubmissionData[]> = {};
         
@@ -230,7 +235,7 @@ const MentorDashboard = () => {
         
         setMenteeSubmissions(statusResults);
         setMenteeFullSubmissions(fullSubmissionsResults);
-    };
+    }, []);
 
     const fetchMenteeDetails = async (menteeName: string) => {
         try {
@@ -274,7 +279,7 @@ const MentorDashboard = () => {
         }
     };
 
-    const fetchTasks = async () => {
+    const fetchTasks = useCallback(async () => {
         try {
             const trackId = currentTrack?.id || 1; // Use current track or fallback to 1
             
@@ -293,7 +298,7 @@ const MentorDashboard = () => {
             console.error('Error fetching tasks:', error);
             return [];
         }
-    };
+    }, [currentTrack]);
 
     // Initialize tracks when component mounts
     useEffect(() => {
@@ -313,7 +318,7 @@ const MentorDashboard = () => {
         };
         setLoading(true);
         initData();
-    }, [menteesLoading, mentees, currentTrack]);
+    }, [menteesLoading, mentees, currentTrack, fetchTasks, fetchMenteeSubmissions]);
 
     // Fetch mentee details when selected mentee changes
     useEffect(() => {
