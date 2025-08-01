@@ -21,7 +21,7 @@ const TasksViewer = ({ isMentor, tasks, highted_task, onTaskClick }: TasksViewer
             onTaskClick(taskId);
         }
     };
-    
+    console.log(tasks);
     return (
         <div className="p-2 sm:p-3 pb-4 sm:pb-5">
             <div className="overflow-x-visible flex flex-col scrollbar-hide gap-2 sm:gap-3">

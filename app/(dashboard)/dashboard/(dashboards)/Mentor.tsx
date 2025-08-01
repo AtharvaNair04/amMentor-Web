@@ -2,7 +2,6 @@
 
 import { ReviewedTask, FeedbackProvided, UpcomingTask } from "../(tasks)/ListViews";
 import CurrentTask from "../(tasks)/CurrentTask";
-import Badges from "../(user)/Badges";
 import PlayerProgress from "../(user)/PlayerProgress";
 import PlayerStats from "../(user)/PlayerStats";
 import { JSX, useEffect, useMemo, useState, useCallback } from 'react';
@@ -149,7 +148,6 @@ const MentorDashboard = () => {
         for (const mentee of menteesList) {
             statusResults[mentee.name] = {};
             fullSubmissionsResults[mentee.name] = [];
-            
             // Fetch submissions per track instead of per task
             for (const [trackId, tasksInTrack] of Object.entries(tasksByTrack)) {
                 try {
@@ -299,7 +297,7 @@ const MentorDashboard = () => {
                 <div className="flex flex-col sm:flex-row justify-between">
                     <div className="flex text-xl sm:text-2xl md:text-3xl gap-1 mb-4 sm:mb-0">
                         <h1>Welcome, </h1>
-                        <h1 className="text-primary-yellow">Mentor</h1>
+                        <h1 className="text-primary-yellow">Knight</h1>
                     </div>
                     <select 
                         className="bg-deeper-grey rounded-lg text-primary-yellow px-3 py-2 sm:px-4 md:px-6 md:py-3 w-full sm:w-auto mb-6 sm:mb-0"
@@ -320,7 +318,7 @@ const MentorDashboard = () => {
                 <div className="flex flex-col lg:flex-row justify-between mt-4 sm:mt-6 md:mt-10 gap-6 lg:gap-0">
                     <div className="flex flex-col gap-2 w-full lg:w-[46%]">
                         <PlayerStats rank={menteeDetails.position} points={menteeDetails.total_points} />
-                        <Badges />
+                        {/* <Badges /> */}
                         {/* Updated to use submitted tasks count instead of completed tasks */}
                         <PlayerProgress tasks={submittedTasksCount} totaltasks={totaltask} />
                     </div>
