@@ -2,7 +2,7 @@ function ReviewedTask({reviewed_tasks, isLoading}:{reviewed_tasks:string[][] ,is
     const tasks = reviewed_tasks.map((task) => (
         <div 
             key={task[0]}
-            className="bg-deep-grey rounded-lg sm:rounded-xl md:rounded-2xl transition-colors font-bold hover:bg-primary-yellow">
+            className="bg-deep-grey rounded-lg sm:rounded-xl md:rounded-2xl font-bold hover:bg-primary-yellow">
             <div className="flex justify-between p-2 sm:p-3 hover:text-black text-sm sm:text-base">
                 <h1>{task[0]}</h1> {/* Task ID */}
                 <h1>{task[1]}</h1> {/* Task Title */}
@@ -11,7 +11,7 @@ function ReviewedTask({reviewed_tasks, isLoading}:{reviewed_tasks:string[][] ,is
     ));
 
     return(
-        <div className="bg-deeper-grey hover:scale-105 transition-transform rounded-xl md:rounded-3xl p-2 sm:p-3 pb-4 sm:pb-5 w-full">
+        <div className="bg-deeper-grey rounded-xl md:rounded-3xl p-2 sm:p-3 pb-4 sm:pb-5 w-full">
             <h1 className="text-white font-bold text-base sm:text-lg md:text-xl px-2 sm:px-4 md:px-16 p-1 sm:p-2 md:p-4">REVIEWED TASKS</h1>
             <div className={`h-48 sm:h-56 md:h-44 overflow-y-auto scrollbar-hide flex flex-col gap-2 sm:gap-3`}>
                 {tasks.length > 0 ? tasks : isLoading? <div className="loader m-auto"></div>:<div className="text-gray-400 text-center p-4">No reviewed tasks</div>}
@@ -24,7 +24,7 @@ function UpcomingTask({upcoming_tasks, isLoading}:{upcoming_tasks:string[][],isL
     const tasks = upcoming_tasks.map((task) => (
         <div 
             key={task[0]} 
-            className=" bg-deep-grey rounded-lg sm:rounded-xl md:rounded-2xl font-bold transition-colors hover:bg-primary-yellow">
+            className="bg-deep-grey rounded-lg sm:rounded-xl md:rounded-2xl font-bold hover:bg-primary-yellow">
             <div className="flex justify-between p-2 sm:p-3 hover:text-black text-sm sm:text-base">
                 <h1>{task[0]}</h1> {/* Task ID */}
                 <h1>{task[1]}</h1> {/* Task Title */}
@@ -32,7 +32,7 @@ function UpcomingTask({upcoming_tasks, isLoading}:{upcoming_tasks:string[][],isL
         </div>
     ));
     return(
-        <div className="bg-deeper-grey hover:scale-105 transition-transform rounded-xl md:rounded-3xl p-2 sm:p-3 pb-4 sm:pb-5 w-full">
+        <div className="bg-deeper-grey rounded-xl md:rounded-3xl p-2 sm:p-3 pb-4 sm:pb-5 w-full">
             <h1 className="text-white font-bold text-base sm:text-lg md:text-xl px-2 sm:px-4 md:px-16 p-1 sm:p-2 md:p-4">UPCOMING TASKS</h1>
             <div className={`h-48 sm:h-56 md:h-44 overflow-y-auto scrollbar-hide flex flex-col gap-2 sm:gap-3`}>
                 {isLoading?<div className="loader m-auto"></div>:
@@ -83,7 +83,7 @@ function FeedbackProvided({ selectedMentee, menteeSubmissions }: {
             .map(submission => (
                 <div 
                     key={submission.id}
-                    className="bg-deep-grey rounded-lg sm:rounded-xl md:rounded-2xl font-bold transition-colors hover:bg-primary-yellow group"
+                    className="bg-deep-grey rounded-lg sm:rounded-xl md:rounded-2xl font-bold hover:bg-primary-yellow group"
                 >
                     <div className="flex justify-between p-2 sm:p-3 group-hover:text-black text-sm sm:text-base">
                         <div className="flex flex-col">
@@ -116,7 +116,7 @@ function FeedbackProvided({ selectedMentee, menteeSubmissions }: {
     const feedbackTasks = getFeedbackTasks();
 
     return (
-        <div className="bg-deeper-grey hover:scale-105 transition-transform rounded-xl md:rounded-3xl p-2 sm:p-3 pb-4 sm:pb-5 mt-2">
+        <div className="bg-deeper-grey rounded-xl md:rounded-3xl p-2 sm:p-3 pb-4 sm:pb-5 mt-2">
             <h1 className="text-white font-bold text-base sm:text-lg md:text-xl px-2 sm:px-4 md:px-16 p-1 sm:p-2 md:p-4">
                 FEEDBACK PROVIDED
             </h1>

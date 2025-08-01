@@ -1,5 +1,3 @@
-import { useRouter } from "next/navigation";
-
 interface Task {
     track_id: number;
     task_no: number;
@@ -23,7 +21,7 @@ export default function CurrentTask({ mentor = false, task, status , isLoading }
         if (typeof deadline === 'number') return `${deadline} days`;
         return deadline;
     };
-    const router = useRouter();
+
     const getButtonText = (): string => {
         if (mentor) {
             return status === 'Submitted' ? "Review Work" : "View Task";
@@ -60,7 +58,7 @@ export default function CurrentTask({ mentor = false, task, status , isLoading }
     }
 
     return (
-        <div className="hover:scale-105 transition-transform flex flex-col sm:flex-row h-auto sm:h-40 md:h-48 rounded-xl md:rounded-3xl text-black w-full bg-primary-yellow justify-between p-4 md:px-8 md:py-3">
+        <div className="flex flex-col sm:flex-row h-auto sm:h-40 md:h-48 rounded-xl md:rounded-3xl text-black w-full bg-primary-yellow justify-between p-4 md:px-8 md:py-3">
             <div className="h-full mb-4 sm:mb-0">
                 <h3 className="font-bold text-xs sm:text-sm md:text-base">
                     {mentor ? "LATEST SUBMITTED TASK" : "CURRENT TASK"}
@@ -90,9 +88,7 @@ export default function CurrentTask({ mentor = false, task, status , isLoading }
                     )}
                 </div>
                 <button className={`${getButtonColor()} text-white font-extrabold rounded-xl md:rounded-3xl pb-1 mt-2 sm:mt-1 md:mt-0`}>
-                    <div className="bg-deep-grey rounded-xl md:rounded-3xl px-3 sm:px-4 md:px-5 py-2 md:py-3" onClick={()=>{
-                        router.push("/submission?page="+task.id.toString())
-                    }} >
+                    <div className="bg-deep-grey rounded-xl md:rounded-3xl px-3 sm:px-4 md:px-5 py-2 md:py-3">
                         <h1 className="text-sm sm:text-base">{getButtonText()}</h1>
                     </div>
                 </button>

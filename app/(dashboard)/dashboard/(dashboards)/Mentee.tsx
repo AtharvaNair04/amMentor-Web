@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { ReviewedTask, UpcomingTask } from "../(tasks)/ListViews";
 import CurrentTask from "../(tasks)/CurrentTask";
+import Badges from "../(user)/Badges";
 import PlayerStats from "../(user)/PlayerStats";
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
@@ -120,18 +121,23 @@ const MenteeDashboard = () => {
         if (!userEmail) return;
         
         const results: Record<number, string> = {};
-        const res = await fetch(`https://amapi.amfoss.in/submissions/?email=${encodeURIComponent(userEmail)}&track_id=${trackId}`);
         for (const task of tasksList) {
             try {
+                const res = await fetch(`https://amapi.amfoss.in/submissions/?email=${encodeURIComponent(userEmail)}&track_id=${trackId}`);
+                
                 if (res.ok) {
                     const submissions: Submission[] = await res.json();
-                    const results: Record<number, string> = {};
-                    tasksList.forEach(task => {
-                        const taskSubmission = submissions.find((s: Submission) => s.task_id === task.id);
-                        results[task.id] = taskSubmission ? normalizeStatus(taskSubmission.status) : 'Not Started';
-                    });
+                    const taskSubmission = submissions.find((s: Submission) => s.task_id === task.id);
                     
-                    setMySubmissions(results);
+                    if (taskSubmission) {
+                        const rawStatus = taskSubmission.status;
+                        const normalizedStatus = normalizeStatus(rawStatus);
+                        results[task.id] = normalizedStatus;
+                    } else {
+                        results[task.id] = 'Not Started';
+                    }
+                } else {
+                    results[task.id] = 'Not Started';
                 }
             } catch (error) {
                 console.error(`Error fetching submission for task ${task.id}:`, error);
@@ -205,7 +211,6 @@ const MenteeDashboard = () => {
         setLoading(true);
         fetchMenteeDetails();
         fetchTasks();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [router]);
 
     // Update current task when submissions change
@@ -214,7 +219,6 @@ const MenteeDashboard = () => {
             const current = getCurrentTask();
             setCurrentTask(current);
         }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [tasks, mySubmissions]);
 
     return (
@@ -223,7 +227,7 @@ const MenteeDashboard = () => {
                 <div className="flex flex-col sm:flex-row justify-between">
                     <div className="flex text-xl sm:text-2xl md:text-3xl gap-1 mb-4 sm:mb-0">
                         <h1>Welcome, </h1>
-                        <h1 className="text-primary-yellow">Padawan</h1>
+                        <h1 className="text-primary-yellow">Mentee</h1>
                     </div>
                     <Link href="/track" className="text-primary-yellow underline mb-6 sm:mb-0">
                         Change Track
@@ -243,7 +247,7 @@ const MenteeDashboard = () => {
                     </div>
                     <div className="flex flex-col gap-2 w-full lg:w-[46%]">
                         <UpcomingTask isLoading={loading} upcoming_tasks={getUpcomingTasks()} />
-                        {/* <Badges /> */}
+                        <Badges />
                     </div>
                 </div>
             </div>
