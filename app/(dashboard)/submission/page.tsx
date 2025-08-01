@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, Suspense } from "react";
 import TasksViewer from "./(tasks)/submissionitems";
 import { useAuth } from "@/app/context/authcontext";
 import { useMentee } from "@/app/context/menteeContext";
@@ -341,7 +341,7 @@ const TasksPage = () => {
         };
 
         init();
-    }, [isLoggedIn, router, ismentor, fetchTasks, fetchSelectedMenteeSubmissions, fetchMySubmissions, menteesLoading, selectedMentee, selectedMenteeEmail, userRole]);
+    }, [isLoggedIn, router, ismentor, fetchTasks, fetchSelectedMenteeSubmissions, fetchMySubmissions, menteesLoading, selectedMentee, selectedMenteeEmail, userRole, searchParams]);
 
     // Separate effect to handle mentee selection changes
     useEffect(() => {
@@ -553,4 +553,18 @@ const TasksPage = () => {
     );
 };
 
-export default TasksPage;
+// Wrapper component with Suspense boundary
+const TasksPageWrapper = () => {
+    return (
+        <Suspense fallback={
+            <div className="text-white flex justify-center items-center h-screen">
+                <div className="loader"></div>
+                <div className="text-xl ml-4">Loading...</div>
+            </div>
+        }>
+            <TasksPage />
+        </Suspense>
+    );
+};
+
+export default TasksPageWrapper;

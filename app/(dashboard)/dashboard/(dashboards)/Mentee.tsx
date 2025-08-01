@@ -6,7 +6,7 @@ import CurrentTask from "../(tasks)/CurrentTask";
 import Badges from "../(user)/Badges";
 import PlayerStats from "../(user)/PlayerStats";
 import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 
 interface Task {
     track_id: number;
@@ -76,7 +76,7 @@ const MenteeDashboard = () => {
         return previousTaskStatus === 'Submitted' || previousTaskStatus === 'Reviewed';
     };
 
-    const getCurrentTask = (): Task | null => {
+    const getCurrentTask = useCallback((): Task | null => {
         // Find the latest unlocked task that is not reviewed
         const unlockedTasks = tasks.filter(task => isTaskUnlocked(task.id));
         const currentTasks = unlockedTasks.filter(task => {
@@ -86,7 +86,7 @@ const MenteeDashboard = () => {
         
         // Return the latest (highest ID) current task
         return currentTasks.length > 0 ? currentTasks[currentTasks.length - 1] : null;
-    };
+    }, [tasks, mySubmissions, isTaskUnlocked]);
 
     const getFormattedTasks = (): string[][] => {
         return tasks.map((task) => {
@@ -116,7 +116,7 @@ const MenteeDashboard = () => {
         return formattedTasks.filter(task => task[2] === 'Reviewed');
     };
 
-    const fetchMySubmissions = async (tasksList: Task[], trackId: number) => {
+    const fetchMySubmissions = useCallback(async (tasksList: Task[], trackId: number) => {
         const userEmail = getUserEmail();
         if (!userEmail) return;
         
@@ -140,7 +140,7 @@ const MenteeDashboard = () => {
             }
         }
         setMySubmissions(results);
-    };
+    }, []);
 
     useEffect(() => {
         const fetchMenteeDetails = async () => {
@@ -206,7 +206,7 @@ const MenteeDashboard = () => {
         setLoading(true);
         fetchMenteeDetails();
         fetchTasks();
-    }, [router]);
+    }, [router, fetchMySubmissions]);
 
     // Update current task when submissions change
     useEffect(() => {
@@ -214,7 +214,7 @@ const MenteeDashboard = () => {
             const current = getCurrentTask();
             setCurrentTask(current);
         }
-    }, [tasks, mySubmissions]);
+    }, [tasks, mySubmissions, getCurrentTask]);
 
     return (
         <div className="text-white p-4 md:p-2 lg:p-0">
