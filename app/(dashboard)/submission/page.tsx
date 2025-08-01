@@ -14,7 +14,7 @@ interface Task {
     title: string;
     description: string;
     points: number;
-    deadline: number | null; // Changed to match API response
+    deadline: number | null;
     id: number;
 }
 
@@ -28,7 +28,7 @@ const normalizeStatus = (status: string): string => {
     
     const statusMap: { [key: string]: string } = {
         'submitted': 'Submitted',
-        'approved': 'Reviewed',  // This is the key fix!
+        'approved': 'Reviewed',
         'rejected': 'Rejected',
         'paused': 'Paused',
         'in progress': 'In Progress',
@@ -39,7 +39,8 @@ const normalizeStatus = (status: string): string => {
     return statusMap[normalizedKey] || status;
 };
 
-const TasksPage = () => {
+// Main component that uses search params - must be wrapped in Suspense
+const TasksPageContent = () => {
     const { userRole, isLoggedIn } = useAuth();
     const { 
         selectedMentee, 
@@ -48,6 +49,7 @@ const TasksPage = () => {
     } = useMentee();
     const searchParams = useSearchParams();
     const router = useRouter();
+    
     const [toggles, setToggles] = useState([true, false, false]);
     const [showReview, setShowReview] = useState(false);
     const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
@@ -57,18 +59,19 @@ const TasksPage = () => {
     const [menteeSubmissions, setMenteeSubmissions] = useState<Record<string, Record<number, string>>>({});
     const [mySubmissions, setMySubmissions] = useState<Record<number, string>>({});
     const [currentTrack, setCurrentTrack] = useState<{id: number; name: string} | null>(null);
-    
+    const [toggledTasks, setToggledTasks] = useState<string[][]>([]);
 
-    // Get user email from localStorage/sessionStorage
     const getUserEmail = (): string | null => {
-        const email = localStorage.getItem('email');
-        console.log('Found email in localStorage:', email);
-        return email;
+        if (typeof window !== 'undefined') {
+            const email = localStorage.getItem('email');
+            console.log('Found email in localStorage:', email);
+            return email;
+        }
+        return null;
     };
 
     const ismentor = userRole === 'Mentor';
 
-    // Fixed helper function to check if a task is unlocked for mentees
     const isTaskUnlocked = useCallback((taskId: number): boolean => {
         if (ismentor) return true;
         
@@ -107,24 +110,32 @@ const TasksPage = () => {
         if (userRole === 'Mentor') {
             trackId = 1;
         } else {
-            const sessionTrack = sessionStorage.getItem('currentTrack');
-            if (!sessionTrack) {
-                router.push('/track');
-                return [];
+            if (typeof window !== 'undefined') {
+                const sessionTrack = sessionStorage.getItem('currentTrack');
+                if (!sessionTrack) {
+                    router.push('/track');
+                    return [];
+                }
+                const trackData = JSON.parse(sessionTrack);
+                trackId = trackData.id;
+                setCurrentTrack(trackData);
             }
-            const trackData = JSON.parse(sessionTrack);
-            trackId = trackData.id;
-            setCurrentTrack(trackData);
         }
 
-        const response = await fetch(`https://amapi.amfoss.in/tracks/${trackId}/tasks`);
-        if (!response.ok) throw new Error('Failed to fetch tasks');
-        const data = await response.json();
-        setTasks(data);
-        return data;
+        if (!trackId) return [];
+
+        try {
+            const response = await fetch(`https://amapi.amfoss.in/tracks/${trackId}/tasks`);
+            if (!response.ok) throw new Error('Failed to fetch tasks');
+            const data = await response.json();
+            setTasks(data);
+            return data;
+        } catch (error) {
+            console.error('Error fetching tasks:', error);
+            return [];
+        }
     }, [userRole, router]);
 
-    // Updated fetchMenteeSubmissions to use only the selected mentee
     const fetchSelectedMenteeSubmissions = useCallback(async (trackId: number, tasksList: Task[]) => {
         if (!selectedMentee || !selectedMenteeEmail) {
             console.log('No selected mentee, skipping submission fetch');
@@ -135,14 +146,12 @@ const TasksPage = () => {
         results[selectedMentee] = {};
         
         try {
-            // Single API call for the selected mentee
             const res = await fetch(`https://amapi.amfoss.in/submissions/?email=${encodeURIComponent(selectedMenteeEmail)}&track_id=${trackId}`);
             
             if (res.ok) {
                 const submissions: Submission[] = await res.json();
                 console.log(`Fetched ${submissions.length} submissions for ${selectedMentee} in track ${trackId}`);
                 
-                // Map all submissions for this mentee to their respective tasks
                 for (const task of tasksList) {
                     const taskSubmission = submissions.find((s: Submission) => s.task_id === task.id);
                     const rawStatus = taskSubmission?.status || 'Not Started';
@@ -151,14 +160,12 @@ const TasksPage = () => {
                 }
             } else {
                 console.error(`Failed to fetch submissions for ${selectedMentee}:`, res.status);
-                // Set all tasks to 'Not Started' if API call fails
                 for (const task of tasksList) {
                     results[selectedMentee][task.id] = 'Not Started';
                 }
             }
         } catch (error) {
             console.error(`Error fetching submissions for ${selectedMentee}:`, error);
-            // Set all tasks to 'Not Started' if error occurs
             for (const task of tasksList) {
                 results[selectedMentee][task.id] = 'Not Started';
             }
@@ -167,7 +174,6 @@ const TasksPage = () => {
         setMenteeSubmissions(results);
     }, [selectedMentee, selectedMenteeEmail]);
 
-    // Optimized fetchMySubmissions - single API call per track
     const fetchMySubmissions = useCallback(async (trackId: number, tasksList: Task[]) => {
         const userEmail = getUserEmail();
         if (!userEmail) {
@@ -180,7 +186,6 @@ const TasksPage = () => {
         const results: Record<number, string> = {};
         
         try {
-            // Single API call for the entire track
             const res = await fetch(`https://amapi.amfoss.in/submissions/?email=${encodeURIComponent(userEmail)}&track_id=${trackId}`);
             console.log(`Fetching submissions for track ${trackId}, response status:`, res.status);
             
@@ -188,7 +193,6 @@ const TasksPage = () => {
                 const submissions: Submission[] = await res.json();
                 console.log(`Fetched ${submissions.length} total submissions for track ${trackId}:`, submissions);
                 
-                // Map all submissions to their respective tasks
                 for (const task of tasksList) {
                     const taskSubmission = submissions.find((s: Submission) => s.task_id === task.id);
                     
@@ -203,14 +207,12 @@ const TasksPage = () => {
                 }
             } else {
                 console.error(`Failed to fetch submissions for track ${trackId}:`, res.status);
-                // Set all tasks to 'Not Started' if API call fails
                 for (const task of tasksList) {
                     results[task.id] = 'Not Started';
                 }
             }
         } catch (error) {
             console.error(`Error fetching submissions for track ${trackId}:`, error);
-            // Set all tasks to 'Not Started' if error occurs
             for (const task of tasksList) {
                 results[task.id] = 'Not Started';
             }
@@ -220,7 +222,6 @@ const TasksPage = () => {
         setMySubmissions(results);
     }, []);
 
-    // Helper function to filter tasks based on status and current toggle
     const getFilteredTasks = useCallback((): Task[] => {
         const activeToggleIndex = toggles.findIndex(toggle => toggle);
         
@@ -228,16 +229,13 @@ const TasksPage = () => {
             let status: string;
             
             if (ismentor && selectedMentee && menteeSubmissions[selectedMentee]) {
-                // Mentor view - use selected mentee's status
                 status = menteeSubmissions[selectedMentee][task.id] || 'Not Started';
             } else if (!ismentor && Object.keys(mySubmissions).length > 0) {
-                // Mentee view - use own status
                 status = mySubmissions[task.id] || 'Not Started';
             } else {
                 status = 'Not Started';
             }
 
-            // Filter based on active toggle
             switch (activeToggleIndex) {
                 case 0: // All Tasks
                     return true;
@@ -264,15 +262,12 @@ const TasksPage = () => {
         
         return filteredTasks.map((task) => {
             if (ismentor && selectedMentee && menteeSubmissions[selectedMentee]) {
-                // Mentor view - show selected mentee's status
                 const status = menteeSubmissions[selectedMentee][task.id] || 'Not Started';
                 return [task.id.toString(), task.title, status];
             } else if (!ismentor && Object.keys(mySubmissions).length > 0) {
-                // Mentee view - show own progress with lock status
                 const status = mySubmissions[task.id] || 'Not Started';
                 const unlocked = isTaskUnlocked(task.id);
                 
-                // Add lock indicator for locked tasks and deadline info
                 let displayStatus = status;
                 if (!unlocked) {
                     displayStatus = `🔒 ${status}`;
@@ -289,87 +284,12 @@ const TasksPage = () => {
         });
     }, [getFilteredTasks, ismentor, selectedMentee, menteeSubmissions, mySubmissions, isTaskUnlocked]);
 
-    const [toggledTasks, setToggledTasks] = useState<string[][]>([]);
-
-    // Updated useEffect with optimized API calls
-    useEffect(() => {
-        if (!isLoggedIn) {
-            router.push('/');
-            return;
-        }
-
-        const init = async () => {
-            try {
-                const fetchedTasks = await fetchTasks();
-                if (fetchedTasks.length === 0) {
-                    setLoading(false);
-                    return;
-                }
-                // Get track ID once
-                let trackId;
-                if (userRole === 'Mentor') {
-                    trackId = 1;
-                } else {
-                    const sessionTrack = sessionStorage.getItem('currentTrack');
-                    if (sessionTrack) {
-                        const trackData = JSON.parse(sessionTrack);
-                        trackId = trackData.id;
-                        setCurrentTrack(trackData);
-                    }
-                }
-                if (ismentor) {
-                    // Wait for mentees to load, then fetch submissions for selected mentee
-                    if (!menteesLoading && selectedMentee && selectedMenteeEmail) {
-                        await fetchSelectedMenteeSubmissions(trackId, fetchedTasks);
-                    }
-                } else {
-                    // Pass trackId and tasks to optimized function
-                    if (trackId) {
-                        await fetchMySubmissions(trackId, fetchedTasks);
-                    }
-                }
-                if(searchParams.has("page")){
-                    setSelectedTaskId(searchParams.get("page"));
-                    setSelectedMenteeId(selectedMenteeEmail);
-                    setShowReview(true);
-                }
-                setLoading(false);
-            } catch (error) {
-                console.error('Error initializing:', error);
-                setLoading(false);
-            }
-        };
-
-        init();
-    }, [isLoggedIn, router, ismentor, fetchTasks, fetchSelectedMenteeSubmissions, fetchMySubmissions, menteesLoading, selectedMentee, selectedMenteeEmail, userRole, searchParams]);
-
-    // Separate effect to handle mentee selection changes
-    useEffect(() => {
-        if (ismentor && !menteesLoading && selectedMentee && selectedMenteeEmail && tasks.length > 0) {
-            const trackId = 1; // Mentors use track 1
-            fetchSelectedMenteeSubmissions(trackId, tasks);
-        }
-    }, [selectedMentee, selectedMenteeEmail, menteesLoading, ismentor, tasks, fetchSelectedMenteeSubmissions]);
-
-    // Update toggledTasks whenever tasks, submissions, or toggles change
-    useEffect(() => {
-        if (tasks.length > 0) {
-            const formattedTasks = getFormattedTasks();
-            console.log('Formatted tasks for current toggle:', formattedTasks);
-            console.log('My submissions:', mySubmissions);
-            console.log('Active toggle:', toggles.findIndex(t => t));
-            setToggledTasks(formattedTasks);
-        }
-    }, [tasks, getFormattedTasks, mySubmissions, toggles]);
-
-    // Simplified getFilteredMentees - now only returns data for the selected mentee
     const getFilteredMentees = useCallback((): string[][][] => {
         if (!ismentor || tasks.length === 0 || !selectedMentee) return [];
 
         return toggledTasks.map(([taskIdStr]) => {
             const taskId = parseInt(taskIdStr);
             const status = menteeSubmissions[selectedMentee]?.[taskId] || 'Not Started';
-            // Return array with single mentee (the selected one)
             return [[selectedMentee, selectedMenteeEmail || '', "-", status]];
         });
     }, [ismentor, selectedMentee, selectedMenteeEmail, toggledTasks, menteeSubmissions, tasks]);
@@ -380,17 +300,14 @@ const TasksPage = () => {
         const newToggles: boolean[] = [false, false, false];
         newToggles[index] = true;
         setToggles(newToggles);
-        // The useEffect will handle updating toggledTasks when toggles change
     }
 
     const handleTaskClick = (taskId: string) => {
         if (ismentor) {
-            // For mentors, go directly to review with the selected mentee
             setSelectedTaskId(taskId);
             setSelectedMenteeId(selectedMenteeEmail);
             setShowReview(true);
         } else {
-            // For mentees, check if the task is unlocked before allowing access
             const taskIdNum = parseInt(taskId);
             if (!isTaskUnlocked(taskIdNum)) {
                 const previousTaskId = taskIdNum - 1;
@@ -411,8 +328,6 @@ const TasksPage = () => {
     };
 
     const handleMenteeClick = (taskId: string, menteeEmail: string) => {
-        // This function is kept for compatibility but shouldn't be used for mentors anymore
-        // since they go directly to review via handleTaskClick
         setSelectedTaskId(taskId);
         setSelectedMenteeId(menteeEmail);
         setShowReview(true);
@@ -423,9 +338,86 @@ const TasksPage = () => {
     };
 
     const handleChangeTrack = () => {
-        sessionStorage.removeItem('currentTrack');
+        if (typeof window !== 'undefined') {
+            sessionStorage.removeItem('currentTrack');
+        }
         router.push('/track');
     };
+
+    // Main initialization effect
+    useEffect(() => {
+        if (!isLoggedIn) {
+            router.push('/');
+            return;
+        }
+
+        const init = async () => {
+            try {
+                const fetchedTasks = await fetchTasks();
+                if (fetchedTasks.length === 0) {
+                    setLoading(false);
+                    return;
+                }
+
+                let trackId;
+                if (userRole === 'Mentor') {
+                    trackId = 1;
+                } else {
+                    if (typeof window !== 'undefined') {
+                        const sessionTrack = sessionStorage.getItem('currentTrack');
+                        if (sessionTrack) {
+                            const trackData = JSON.parse(sessionTrack);
+                            trackId = trackData.id;
+                            setCurrentTrack(trackData);
+                        }
+                    }
+                }
+
+                if (ismentor) {
+                    if (!menteesLoading && selectedMentee && selectedMenteeEmail && trackId) {
+                        await fetchSelectedMenteeSubmissions(trackId, fetchedTasks);
+                    }
+                } else {
+                    if (trackId) {
+                        await fetchMySubmissions(trackId, fetchedTasks);
+                    }
+                }
+
+                // Handle search params
+                if (searchParams.has("page")) {
+                    setSelectedTaskId(searchParams.get("page"));
+                    setSelectedMenteeId(selectedMenteeEmail);
+                    setShowReview(true);
+                }
+
+                setLoading(false);
+            } catch (error) {
+                console.error('Error initializing:', error);
+                setLoading(false);
+            }
+        };
+
+        init();
+    }, [isLoggedIn, router, ismentor, fetchTasks, fetchSelectedMenteeSubmissions, fetchMySubmissions, menteesLoading, selectedMentee, selectedMenteeEmail, userRole, searchParams]);
+
+    // Handle mentee selection changes
+    useEffect(() => {
+        if (ismentor && !menteesLoading && selectedMentee && selectedMenteeEmail && tasks.length > 0) {
+            const trackId = 1;
+            fetchSelectedMenteeSubmissions(trackId, tasks);
+        }
+    }, [selectedMentee, selectedMenteeEmail, menteesLoading, ismentor, tasks, fetchSelectedMenteeSubmissions]);
+
+    // Update formatted tasks
+    useEffect(() => {
+        if (tasks.length > 0) {
+            const formattedTasks = getFormattedTasks();
+            console.log('Formatted tasks for current toggle:', formattedTasks);
+            console.log('My submissions:', mySubmissions);
+            console.log('Active toggle:', toggles.findIndex(t => t));
+            setToggledTasks(formattedTasks);
+        }
+    }, [tasks, getFormattedTasks, mySubmissions, toggles]);
 
     if (!isLoggedIn) {
         return null; 
@@ -439,7 +431,6 @@ const TasksPage = () => {
         );
     }
 
-    // For mentors, show message if no mentee is selected
     if (ismentor && !selectedMentee) {
         return (
             <div className="text-white flex flex-col justify-center items-center h-screen">
@@ -502,7 +493,6 @@ const TasksPage = () => {
                         </div>
                     )}
 
-                    {/* Show selected mentee info for mentors */}
                     {ismentor && selectedMentee && (
                         <div className="text-center mb-4">
                             <div className="text-yellow-400 text-lg">
@@ -553,18 +543,21 @@ const TasksPage = () => {
     );
 };
 
-// Wrapper component with Suspense boundary - moved the Suspense to wrap the entire page
-const TasksPageWrapper = () => {
+// Loading component
+const LoadingFallback = () => (
+    <div className="text-white flex justify-center items-center h-screen">
+        <div className="loader"></div>
+        <div className="text-xl ml-4">Loading...</div>
+    </div>
+);
+
+// Main wrapper component with proper Suspense boundary
+const TasksPage = () => {
     return (
-        <Suspense fallback={
-            <div className="text-white flex justify-center items-center h-screen">
-                <div className="loader"></div>
-                <div className="text-xl ml-4">Loading...</div>
-            </div>
-        }>
-            <TasksPage />
+        <Suspense fallback={<LoadingFallback />}>
+            <TasksPageContent />
         </Suspense>
     );
 };
 
-export default TasksPageWrapper;
+export default TasksPage;
