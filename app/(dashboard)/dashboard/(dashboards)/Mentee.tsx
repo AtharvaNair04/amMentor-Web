@@ -62,7 +62,7 @@ const MenteeDashboard = () => {
         return localStorage.getItem('email');
     };
 
-    const isTaskUnlocked = (taskId: number): boolean => {
+    const isTaskUnlocked = useCallback((taskId: number): boolean => {
         if (taskId <= 1) return true;
         
         const previousTaskId = taskId - 1;
@@ -74,7 +74,7 @@ const MenteeDashboard = () => {
         
         const previousTaskStatus = mySubmissions[previousTaskId];
         return previousTaskStatus === 'Submitted' || previousTaskStatus === 'Reviewed';
-    };
+    }, [tasks, mySubmissions]);
 
     const getCurrentTask = useCallback((): Task | null => {
         // Find the latest unlocked task that is not reviewed
