@@ -1,10 +1,10 @@
 'use client';
 
-import { useState, useEffect, useCallback, Suspense } from "react";
+import { useState, useEffect, useCallback } from "react";
 import TasksViewer from "./(tasks)/submissionitems";
 import { useAuth } from "@/app/context/authcontext";
 import { useMentee } from "@/app/context/menteeContext";
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 
 import SubmissionReview from "./(review)/review";
 
@@ -47,7 +47,6 @@ const TasksPageContent = () => {
         selectedMenteeEmail, 
         isLoading: menteesLoading 
     } = useMentee();
-    const searchParams = useSearchParams();
     const router = useRouter();
     
     const [toggles, setToggles] = useState([true, false, false]);
@@ -383,11 +382,15 @@ const TasksPageContent = () => {
                     }
                 }
 
-                // Handle search params
-                if (searchParams.has("page")) {
-                    setSelectedTaskId(searchParams.get("page"));
-                    setSelectedMenteeId(selectedMenteeEmail);
-                    setShowReview(true);
+                // Handle search params - client-side only
+                if (typeof window !== 'undefined') {
+                    const urlParams = new URLSearchParams(window.location.search);
+                    const pageParam = urlParams.get('page');
+                    if (pageParam) {
+                        setSelectedTaskId(pageParam);
+                        setSelectedMenteeId(selectedMenteeEmail);
+                        setShowReview(true);
+                    }
                 }
 
                 setLoading(false);
@@ -398,7 +401,7 @@ const TasksPageContent = () => {
         };
 
         init();
-    }, [isLoggedIn, router, ismentor, fetchTasks, fetchSelectedMenteeSubmissions, fetchMySubmissions, menteesLoading, selectedMentee, selectedMenteeEmail, userRole, searchParams]);
+    }, [isLoggedIn, router, ismentor, fetchTasks, fetchSelectedMenteeSubmissions, fetchMySubmissions, menteesLoading, selectedMentee, selectedMenteeEmail, userRole]);
 
     // Handle mentee selection changes
     useEffect(() => {
@@ -543,21 +546,4 @@ const TasksPageContent = () => {
     );
 };
 
-// Loading component
-const LoadingFallback = () => (
-    <div className="text-white flex justify-center items-center h-screen">
-        <div className="loader"></div>
-        <div className="text-xl ml-4">Loading...</div>
-    </div>
-);
-
-// Main wrapper component with proper Suspense boundary
-const TasksPage = () => {
-    return (
-        <Suspense fallback={<LoadingFallback />}>
-            <TasksPageContent />
-        </Suspense>
-    );
-};
-
-export default TasksPage;
+export default TasksPageContent;

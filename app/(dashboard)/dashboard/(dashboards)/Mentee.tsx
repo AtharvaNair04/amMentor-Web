@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { ReviewedTask, UpcomingTask } from "../(tasks)/ListViews";
 import CurrentTask from "../(tasks)/CurrentTask";
-import Badges from "../(user)/Badges";
 import PlayerStats from "../(user)/PlayerStats";
 import { useRouter } from 'next/navigation';
 import { useEffect, useState, useCallback } from 'react';
@@ -206,7 +205,8 @@ const MenteeDashboard = () => {
         setLoading(true);
         fetchMenteeDetails();
         fetchTasks();
-    }, [router, fetchMySubmissions]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [router]);
 
     // Update current task when submissions change
     useEffect(() => {
@@ -214,7 +214,8 @@ const MenteeDashboard = () => {
             const current = getCurrentTask();
             setCurrentTask(current);
         }
-    }, [tasks, mySubmissions, getCurrentTask]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [tasks, mySubmissions]);
 
     return (
         <div className="text-white p-4 md:p-2 lg:p-0">
@@ -242,7 +243,7 @@ const MenteeDashboard = () => {
                     </div>
                     <div className="flex flex-col gap-2 w-full lg:w-[46%]">
                         <UpcomingTask isLoading={loading} upcoming_tasks={getUpcomingTasks()} />
-                        <Badges />
+                        {/* <Badges /> */}
                     </div>
                 </div>
             </div>
