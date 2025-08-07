@@ -114,12 +114,12 @@ const TaskDetails = ({
   const isCurrentTaskUnlocked = (currentTaskId: string): boolean => {
     if (isMentor) return true; // Mentors can access any task
     
-    const currentId = parseInt(currentTaskId);
-    if (currentId <= 1) return true; // First task is always unlocked
+    const currentTaskNo = parseInt(currentTaskId);
+    if (currentTaskNo <= 1) return true; // First task is always unlocked
     
-    // Find the previous task
-    const previousTaskId = currentId - 1;
-    const previousTask = tasks.find(task => task.id === previousTaskId);
+    // Find the previous task by task_no
+    const previousTaskNo = currentTaskNo - 1;
+    const previousTask = tasks.find(task => task.task_no === previousTaskNo);
     
     // If previous task doesn't exist, don't unlock
     if (!previousTask) {
@@ -132,23 +132,23 @@ const TaskDetails = ({
     }
     
     // Otherwise, check if previous task is completed
-    const previousTaskStatus = allSubmissions[previousTaskId];
+    const previousTaskStatus = allSubmissions[previousTaskNo];
     const isUnlocked = previousTaskStatus === 'Submitted' || previousTaskStatus === 'Reviewed';
     
     return isUnlocked;
   };
 
   const getBlockedTaskMessage = (currentTaskId: string): string => {
-    const currentId = parseInt(currentTaskId);
-    const previousTaskId = currentId - 1;
-    const previousTask = tasks.find(task => task.id === previousTaskId);
+    const currentTaskNo = parseInt(currentTaskId);
+    const previousTaskNo = currentTaskNo - 1;
+    const previousTask = tasks.find(task => task.task_no === previousTaskNo);
     
     if (previousTask && previousTask.deadline === null) {
-      return `Task ${previousTaskId} ("${previousTask.title}") has no deadline and should automatically unlock this task. If you're seeing this error, please refresh the page or contact support.`;
+      return `Task ${previousTaskNo} ("${previousTask.title}") has no deadline and should automatically unlock this task. If you're seeing this error, please refresh the page or contact support.`;
     }
     
-    const previousTaskTitle = previousTask ? `"${previousTask.title}"` : previousTaskId.toString();
-    return `You must submit Task ${previousTaskId} (${previousTaskTitle}) before you can start this task.`;
+    const previousTaskTitle = previousTask ? `"${previousTask.title}"` : previousTaskNo.toString();
+    return `You must submit Task ${previousTaskNo} (${previousTaskTitle}) before you can start this task.`;
   };
 
   // Handle start task button click
@@ -226,7 +226,7 @@ const TaskDetails = ({
 
     const body = {
       track_id: Number(currentTrackId),
-      task_no: Number(taskId) - 1,
+      task_no: Number(taskId),
       reference_link: submissionText.trim(),
       start_date: submissionStartDate, // Use the stored start date
       mentee_email: email,
@@ -265,11 +265,13 @@ const TaskDetails = ({
       }
       try {
         setLoading(true);
-        // Use the track ID from props if available, otherwise default to 1
         const fetchTrackId = trackId || 1;
         const res = await fetch(`https://praveshan.ganidande.com/tracks/${fetchTrackId}/tasks`);
         const tasks: TaskApiResponse[] = await res.json();
-        const foundTask = tasks.find((t: TaskApiResponse) => String(t.id) === String(taskId));
+        
+        // Compare with task_no directly since taskId is now task_no
+        const foundTask = tasks.find((t: TaskApiResponse) => t.task_no === parseInt(taskId));
+        
         if (foundTask) {
           setTask({
             id: foundTask.id,
@@ -291,7 +293,7 @@ const TaskDetails = ({
       }
     };
     fetchTask();
-  }, [trackId, taskId]);
+}, [trackId, taskId]);
 
   // Use the corrected unlock logic
   const taskUnlocked = taskId ? isCurrentTaskUnlocked(taskId) : true;

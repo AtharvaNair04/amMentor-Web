@@ -14,7 +14,7 @@ function ReviewedTask({reviewed_tasks, isLoading}:{reviewed_tasks:string[][] ,is
         <div className="bg-deeper-grey rounded-xl md:rounded-3xl p-2 sm:p-3 pb-4 sm:pb-5 w-full">
             <h1 className="text-white font-bold text-base sm:text-lg md:text-xl px-2 sm:px-4 md:px-16 p-1 sm:p-2 md:p-4">REVIEWED TASKS</h1>
             <div className={`h-48 sm:h-56 md:h-44 overflow-y-auto scrollbar-hide flex flex-col gap-2 sm:gap-3`}>
-                {tasks.length > 0 ? tasks : isLoading? <div className="loader m-auto"></div>:<div className="text-gray-400 text-center p-4">No reviewed tasks</div>}
+                {tasks.length > 0 ? tasks : isLoading? <div className="loader m-auto"></div>:<div className="text-gray-400 text-center p-4">Not applicable for praveshan</div>}
             </div>
         </div>
     );
@@ -123,7 +123,7 @@ function FeedbackProvided({ selectedMentee, menteeSubmissions }: {
             <div className="h-48 sm:h-56 md:h-44 overflow-y-auto scrollbar-hide flex flex-col gap-2 sm:gap-3">
                 {feedbackTasks.length > 0 ? feedbackTasks : (
                     <div className="text-gray-400 text-center p-4">
-                        No feedback provided yet
+                        Not applicable for praveshan
                     </div>
                 )}
             </div>

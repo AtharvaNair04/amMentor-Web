@@ -236,32 +236,32 @@ const TasksPageContent = () => {
     }, [tasks, toggles, ismentor, selectedMentee, menteeSubmissions, mySubmissions]);
 
     const getFormattedTasks = useCallback((): string[][] => {
-        const filteredTasks = getFilteredTasks();
-        
-        return filteredTasks.map((task) => {
-            if (ismentor && selectedMentee && menteeSubmissions[selectedMentee]) {
-                const status = menteeSubmissions[selectedMentee][task.task_no] || 'Not Started';
-                return [(task.task_no + 1).toString(), task.title, status];
-            } else if (!ismentor && Object.keys(mySubmissions).length > 0) {
-                const status = mySubmissions[task.task_no] || 'Not Started';
-                const unlocked = isTaskUnlocked(task.task_no);
-                
-                let displayStatus = status;
-                if (!unlocked) {
-                    displayStatus = `🔒 ${status}`;
-                } else if (task.deadline === null) {
-                    displayStatus = `${status} ⚡ (No deadline)`;
-                } else {
-                    displayStatus = `${status} (${task.deadline} days)`;
-                }
-                
-                return [(task.task_no + 1).toString(), task.title, displayStatus];
+    const filteredTasks = getFilteredTasks();
+    
+    return filteredTasks.map((task) => {
+        if (ismentor && selectedMentee && menteeSubmissions[selectedMentee]) {
+            const status = menteeSubmissions[selectedMentee][task.task_no] || 'Not Started';
+            return [task.task_no.toString(), task.title, status];
+        } else if (!ismentor && Object.keys(mySubmissions).length > 0) {
+            const status = mySubmissions[task.task_no] || 'Not Started';
+            const unlocked = isTaskUnlocked(task.task_no);
+            
+            let displayStatus = status;
+            if (!unlocked) {
+                displayStatus = `🔒 ${status}`;
+            } else if (task.deadline === null) {
+                displayStatus = `${status} `;
             } else {
-                return [(task.task_no + 1).toString(), task.title, ""];
+                displayStatus = `${status} (${task.deadline} days)`;
             }
-        });
-    }, [getFilteredTasks, ismentor, selectedMentee, menteeSubmissions, mySubmissions, isTaskUnlocked]);
-
+            
+            // Use task.task_no for both display and internal logic
+            return [task.task_no.toString(), task.title, displayStatus];
+        } else {
+            return [task.task_no.toString(), task.title, ""];
+        }
+    });
+}, [getFilteredTasks, ismentor, selectedMentee, menteeSubmissions, mySubmissions, isTaskUnlocked]);
     // Updated useEffect with optimized API calls
     useEffect(() => {
         if (!isLoggedIn) {
@@ -362,29 +362,31 @@ const TasksPageContent = () => {
     }
 
     const handleTaskClick = (taskId: string) => {
-        if (ismentor) {
-            setSelectedTaskId(taskId);
-            setSelectedMenteeId(selectedMenteeEmail);
-            setShowReview(true);
-        } else {
-            const taskIdNum = parseInt(taskId);
-            if (!isTaskUnlocked(taskIdNum - 1)) {
-                const previousTaskId = taskIdNum - 2;
-                const previousTask = tasks.find(task => task.task_no === previousTaskId);
-                
-                if (previousTask && previousTask.deadline === null) {
-                    alert(`Task ${previousTaskId + 1} ("${previousTask.title}") has no deadline and should automatically unlock this task. If you're seeing this error, please refresh the page or contact support.`);
-                } else {
-                    const previousTaskTitle = previousTask ? `"${previousTask.title}"` : (previousTaskId + 1).toString();
-                    alert(`You must complete Task ${previousTaskId + 1} (${previousTaskTitle}) before accessing this task.`);
-                }
-                return;
-            }
+    if (ismentor) {
+        // For mentors, taskId is already task_no, pass it directly
+        setSelectedTaskId(taskId);
+        setSelectedMenteeId(selectedMenteeEmail);
+        setShowReview(true);
+    } else {
+        const taskIdNum = parseInt(taskId);
+        if (!isTaskUnlocked(taskIdNum)) {
+            const previousTaskId = taskIdNum - 1;
+            const previousTask = tasks.find(task => task.task_no === previousTaskId);
             
-            setSelectedTaskId((taskIdNum - 1).toString());
-            setShowReview(true);
+            if (previousTask && previousTask.deadline === null) {
+                alert(`Task ${previousTaskId + 1} ("${previousTask.title}") has no deadline and should automatically unlock this task. If you're seeing this error, please refresh the page or contact support.`);
+            } else {
+                const previousTaskTitle = previousTask ? `"${previousTask.title}"` : (previousTaskId + 1).toString();
+                alert(`You must complete Task ${previousTaskId + 1} (${previousTaskTitle}) before accessing this task.`);
+            }
+            return;
         }
-    };
+        
+        // For mentees, taskId is task_no, pass it directly
+        setSelectedTaskId(taskId);
+        setShowReview(true);
+    }
+};
 
     const handleMenteeClick = (taskId: string, menteeEmail: string) => {
         setSelectedTaskId(taskId);

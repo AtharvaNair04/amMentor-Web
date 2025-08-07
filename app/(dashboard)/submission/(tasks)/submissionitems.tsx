@@ -11,15 +11,8 @@ interface TasksViewerProps {
 
 const TasksViewer = ({ isMentor, tasks, highted_task, onTaskClick }: TasksViewerProps) => {
     const toggleExpand = (index: number) => {
-        if (isMentor) {
-            // For mentors, since there's only one mentee (the selected one), go directly to review
-            const taskId = tasks[index][0];
-            onTaskClick(taskId);
-        } else {
-            // For mentees, directly open the review component
-            const taskId = tasks[index][0];
-            onTaskClick(taskId);
-        }
+        const taskId = tasks[index][0]; // This is already task_no as string
+        onTaskClick(taskId);
     };
     
     return (
@@ -45,11 +38,11 @@ const TasksViewer = ({ isMentor, tasks, highted_task, onTaskClick }: TasksViewer
                                         ${item.includes("Pending") && "text-primary-yellow"}`}
                                     key={j}
                                 >
-                                    {item}
+                                    {/* Display task number as task_no + 1 for user readability */}
+                                    {j === 0 ? `${parseInt(item) + 1}` : item}
                                 </h1>
                             ))}
                         </div>
-                        {/* Mentee expansion is now removed since mentors go directly to review */}
                     </div>
                 ))}
             </div>

@@ -5,7 +5,7 @@ import CurrentTask from "../(tasks)/CurrentTask";
 import Badges from "../(user)/Badges";
 import PlayerProgress from "../(user)/PlayerProgress";
 import PlayerStats from "../(user)/PlayerStats";
-import { JSX, useEffect, useMemo, useState, useCallback } from 'react';
+import { useEffect, useMemo, useState, useCallback } from 'react';
 import { useMentee } from "@/app/context/menteeContext";
 
 interface Task {
@@ -68,6 +68,8 @@ const MentorDashboard = () => {
         isLoading: menteesLoading 
     } = useMentee();
     const [loading, setLoading] = useState(true);
+    const [searchTerm, setSearchTerm] = useState('');
+    const [showDropdown, setShowDropdown] = useState(false);
     const [menteeDetails, setMenteeDetails] = useState<MenteeDetails>({
         mentee_name: "temp",
         total_points: 0,
@@ -76,21 +78,51 @@ const MentorDashboard = () => {
     });
     const [tasks, setTasks] = useState<Task[]>([]);
     const [totaltask, settotaltask] = useState(0);
-    const [menteeSubmissions, setMenteeSubmissions] = useState<Record<string, Record<number, string>>>({});
+    const [menteeSubmissions, setMenteeSubmissions] = useState<Record<number, string>>({});
     const [currentTask, setCurrentTask] = useState<Task | null>(null);
     const [currentTrack, setCurrentTrack] = useState<{id: number; name: string} | null>(null);
     const [tracks, setTracks] = useState<{id: number; name: string}[]>([]);
+    const [menteeFullSubmissions, setMenteeFullSubmissions] = useState<SubmissionData[]>([]);
 
-    // Generate mentee options from context
-    const menteeOptions = useMemo<JSX.Element[]>(() => {
-        if (!mentees || mentees.length === 0) {
-            return [<option key="no-mentees" value="">No mentees available</option>];
-        }
+    // Filter mentees based on search term
+    const filteredMentees = useMemo(() => {
+        if (!mentees || mentees.length === 0) return [];
         
-        return mentees.map((mentee, index) => (
-            <option key={index} value={mentee.name}>{mentee.name}</option>
-        ));
-    }, [mentees]);
+        if (!searchTerm.trim()) return mentees;
+        
+        return mentees.filter(mentee => 
+            mentee.name.toLowerCase().includes(searchTerm.toLowerCase())
+        );
+    }, [mentees, searchTerm]);
+
+    // Handle mentee search input
+    const handleSearchChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+        const value = e.target.value;
+        setSearchTerm(value);
+        setShowDropdown(true);
+        
+        // If search is cleared, also clear selected mentee
+        if (!value.trim()) {
+            setSelectedMentee('');
+        }
+    }, [setSelectedMentee]);
+
+    // Handle mentee selection from dropdown
+    const handleMenteeSelect = useCallback((menteeName: string) => {
+        setSelectedMentee(menteeName);
+        setSearchTerm(menteeName);
+        setShowDropdown(false);
+    }, [setSelectedMentee]);
+
+    // Handle input focus
+    const handleInputFocus = useCallback(() => {
+        setShowDropdown(true);
+    }, []);
+
+    // Handle input blur with delay to allow for clicks
+    const handleInputBlur = useCallback(() => {
+        setTimeout(() => setShowDropdown(false), 150);
+    }, []);
 
     // Fetch available tracks
     const fetchTracks = useCallback(async () => {
@@ -127,25 +159,24 @@ const MentorDashboard = () => {
             sessionStorage.setItem('mentorCurrentTrack', JSON.stringify(selectedTrack));
             // Reset current task when track changes
             setCurrentTask(null);
-            // Trigger refetch of tasks and submissions
-            setLoading(true);
         }
-    }, [tracks]);    // Calculate submitted tasks count for a mentee
-    const getSubmittedTasksCount = useCallback((menteeName: string): number => {
-        if (!menteeSubmissions[menteeName]) return 0;
+    }, [tracks]);
+
+    // Calculate submitted tasks count for the selected mentee
+    const getSubmittedTasksCount = useCallback((): number => {
+        if (!menteeSubmissions) return 0;
         
-        const submissions = menteeSubmissions[menteeName];
-        return Object.values(submissions).filter(status => 
+        return Object.values(menteeSubmissions).filter(status => 
             status === 'Submitted' || status === 'Reviewed'
         ).length;
     }, [menteeSubmissions]);
 
-    const getCurrentTaskForMentee = useCallback((menteeName: string): Task | null => {
-        if (!tasks.length || !menteeSubmissions[menteeName]) return null;
+    const getCurrentTaskForMentee = useCallback((): Task | null => {
+        if (!tasks.length || !menteeSubmissions) return null;
         
-        // Find submitted tasks for this mentee
+        // Find submitted tasks for the selected mentee
         const submittedTasks = tasks.filter(task => {
-            const status = menteeSubmissions[menteeName][task.id];
+            const status = menteeSubmissions[task.id];
             return status === 'Submitted';
         });
         
@@ -153,11 +184,11 @@ const MentorDashboard = () => {
         return submittedTasks.length > 0 ? submittedTasks[0] : null;
     }, [tasks, menteeSubmissions]);
 
-    const getFormattedTasksForMentee = (menteeName: string): string[][] => {
-        if (!menteeSubmissions[menteeName]) return [];
+    const getFormattedTasksForMentee = (): string[][] => {
+        if (!menteeSubmissions) return [];
         
         return tasks.map((task) => {
-            const status = menteeSubmissions[menteeName][task.id] || 'Not Started';
+            const status = menteeSubmissions[task.id] || 'Not Started';
             return [(task.task_no + 1).toString(), task.title, status];
         });
     };
@@ -165,7 +196,7 @@ const MentorDashboard = () => {
     const getUpcomingMentorTasks = (): string[][] => {
         if (!selectedMentee) return [];
         
-        const formattedTasks = getFormattedTasksForMentee(selectedMentee);
+        const formattedTasks = getFormattedTasksForMentee();
         return formattedTasks.filter(task => {
             const status = task[2];
             return status === 'Not Started' || status === 'In Progress' || status === 'Paused';
@@ -175,16 +206,27 @@ const MentorDashboard = () => {
     const getReviewedMentorTasks = (): string[][] => {
         if (!selectedMentee) return [];
         
-        const formattedTasks = getFormattedTasksForMentee(selectedMentee);
+        const formattedTasks = getFormattedTasksForMentee();
         return formattedTasks.filter(task => task[2] === 'Reviewed');
     };
 
-    const [menteeFullSubmissions, setMenteeFullSubmissions] = useState<Record<string, SubmissionData[]>>({});
+    // Fetch submissions for only the selected mentee
+    const fetchSelectedMenteeSubmissions = useCallback(async (menteeName: string, tasksList: Task[]) => {
+        if (!menteeName) {
+            setMenteeSubmissions({});
+            setMenteeFullSubmissions([]);
+            return;
+        }
 
-    // Update the fetchMenteeSubmissions function to store full submission data
-    const fetchMenteeSubmissions = useCallback(async (menteesList: { name: string; email: string }[], tasksList: Task[]) => {
-        const statusResults: Record<string, Record<number, string>> = {};
-        const fullSubmissionsResults: Record<string, SubmissionData[]> = {};
+        // Find the mentee's email
+        const mentee = mentees.find(m => m.name === menteeName);
+        if (!mentee) {
+            console.error(`Mentee not found: ${menteeName}`);
+            return;
+        }
+
+        const statusResults: Record<number, string> = {};
+        const fullSubmissionsResults: SubmissionData[] = [];
         
         // Group tasks by track_id to minimize API calls
         const tasksByTrack: Record<number, Task[]> = {};
@@ -195,47 +237,42 @@ const MentorDashboard = () => {
             tasksByTrack[task.track_id].push(task);
         });
 
-        for (const mentee of menteesList) {
-            statusResults[mentee.name] = {};
-            fullSubmissionsResults[mentee.name] = [];
-            
-            // Fetch submissions per track instead of per task
-            for (const [trackId, tasksInTrack] of Object.entries(tasksByTrack)) {
-                try {
-                    const res = await fetch(`https://praveshan.ganidande.com/submissions/?email=${encodeURIComponent(mentee.email)}&track_id=${trackId}`);
+        // Fetch submissions per track
+        for (const [trackId, tasksInTrack] of Object.entries(tasksByTrack)) {
+            try {
+                const res = await fetch(`https://praveshan.ganidande.com/submissions/?email=${encodeURIComponent(mentee.email)}&track_id=${trackId}`);
+                
+                if (res.ok) {
+                    const submissions: SubmissionData[] = await res.json();
                     
-                    if (res.ok) {
-                        const submissions: SubmissionData[] = await res.json();
-                        
-                        // Store full submissions for feedback
-                        fullSubmissionsResults[mentee.name].push(...submissions);
-                        
-                        // Process all tasks for this track for status
-                        tasksInTrack.forEach(task => {
-                            const taskSubmission = submissions.find((s: SubmissionData) => s.task_id === task.id);
-                            const rawStatus = taskSubmission?.status || 'Not Started';
-                            const normalizedStatus = normalizeStatus(rawStatus);
-                            statusResults[mentee.name][task.id] = normalizedStatus;
-                        });
-                    } else {
-                        // If API call fails, set all tasks in this track as 'Not Started'
-                        tasksInTrack.forEach(task => {
-                            statusResults[mentee.name][task.id] = 'Not Started';
-                        });
-                    }
-                } catch (error) {
-                    console.error(`Error fetching submissions for ${mentee.name}, track ${trackId}:`, error);
-                    // Set all tasks in this track as 'Not Started' on error
+                    // Store full submissions for feedback
+                    fullSubmissionsResults.push(...submissions);
+                    
+                    // Process all tasks for this track for status
                     tasksInTrack.forEach(task => {
-                        statusResults[mentee.name][task.id] = 'Not Started';
+                        const taskSubmission = submissions.find((s: SubmissionData) => s.task_id === task.id);
+                        const rawStatus = taskSubmission?.status || 'Not Started';
+                        const normalizedStatus = normalizeStatus(rawStatus);
+                        statusResults[task.id] = normalizedStatus;
+                    });
+                } else {
+                    // If API call fails, set all tasks in this track as 'Not Started'
+                    tasksInTrack.forEach(task => {
+                        statusResults[task.id] = 'Not Started';
                     });
                 }
+            } catch (error) {
+                console.error(`Error fetching submissions for ${menteeName}, track ${trackId}:`, error);
+                // Set all tasks in this track as 'Not Started' on error
+                tasksInTrack.forEach(task => {
+                    statusResults[task.id] = 'Not Started';
+                });
             }
         }
         
         setMenteeSubmissions(statusResults);
         setMenteeFullSubmissions(fullSubmissionsResults);
-    }, []);
+    }, [mentees]);
 
     const fetchMenteeDetails = async (menteeName: string) => {
         try {
@@ -305,20 +342,31 @@ const MentorDashboard = () => {
         fetchTracks();
     }, [fetchTracks]);
 
-    // Fetch tasks and submissions when mentees are loaded or track changes
+    // Fetch tasks when track changes
     useEffect(() => {
-        const initData = async () => {
-            if (!menteesLoading && mentees.length > 0 && currentTrack) {
-                const fetchedTasks = await fetchTasks();
-                if (fetchedTasks.length > 0) {
-                    await fetchMenteeSubmissions(mentees, fetchedTasks);
-                }
+        const initTasks = async () => {
+            if (currentTrack) {
+                setLoading(true);
+                await fetchTasks();
                 setLoading(false);
             }
         };
-        setLoading(true);
-        initData();
-    }, [menteesLoading, mentees, currentTrack, fetchTasks, fetchMenteeSubmissions]);
+        initTasks();
+    }, [currentTrack, fetchTasks]);
+
+    // Fetch submissions when selected mentee or tasks change
+    useEffect(() => {
+        if (selectedMentee && tasks.length > 0) {
+            setLoading(true);
+            fetchSelectedMenteeSubmissions(selectedMentee, tasks).finally(() => {
+                setLoading(false);
+            });
+        } else if (!selectedMentee) {
+            // Clear submissions when no mentee is selected
+            setMenteeSubmissions({});
+            setMenteeFullSubmissions([]);
+        }
+    }, [selectedMentee, tasks, fetchSelectedMenteeSubmissions]);
 
     // Fetch mentee details when selected mentee changes
     useEffect(() => {
@@ -330,13 +378,13 @@ const MentorDashboard = () => {
     // Update current task when selected mentee or submissions change
     useEffect(() => {
         if (tasks.length > 0 && Object.keys(menteeSubmissions).length > 0 && selectedMentee) {
-            const current = getCurrentTaskForMentee(selectedMentee);
+            const current = getCurrentTaskForMentee();
             setCurrentTask(current);
         }
     }, [tasks, menteeSubmissions, selectedMentee, getCurrentTaskForMentee]);
 
     // Calculate submitted tasks count for the selected mentee
-    const submittedTasksCount = selectedMentee ? getSubmittedTasksCount(selectedMentee) : 0;
+    const submittedTasksCount = selectedMentee ? getSubmittedTasksCount() : 0;
 
     if (menteesLoading) {
         return (
@@ -356,11 +404,6 @@ const MentorDashboard = () => {
                             <h1>Welcome, </h1>
                             <h1 className="text-primary-yellow">Mentor</h1>
                         </div>
-                        {currentTrack && (
-                            <div className="text-sm text-gray-400">
-                                Track: {currentTrack.name}
-                            </div>
-                        )}
                     </div>
                     <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
                         <select 
@@ -372,13 +415,43 @@ const MentorDashboard = () => {
                                 <option key={track.id} value={track.id}>{track.name}</option>
                             ))}
                         </select>
-                        <select 
-                            className="bg-deeper-grey rounded-lg text-primary-yellow px-3 py-2 sm:px-4 md:px-6 md:py-3 w-full sm:w-auto mb-6 sm:mb-0"
-                            value={selectedMentee || ''}
-                            onChange={(e) => setSelectedMentee(e.target.value)}
-                        >
-                            {menteeOptions}
-                        </select>
+                        
+                        {/* Search input for mentees */}
+                        <div className="relative w-full sm:w-auto mb-6 sm:mb-0">
+                            <input
+                                type="text"
+                                placeholder="Search for a mentee..."
+                                className="bg-deeper-grey rounded-lg text-primary-yellow px-3 py-2 sm:px-4 md:px-6 md:py-3 w-full sm:w-64 placeholder-gray-400"
+                                value={searchTerm}
+                                onChange={handleSearchChange}
+                                onFocus={handleInputFocus}
+                                onBlur={handleInputBlur}
+                            />
+                            
+                            {/* Search dropdown */}
+                            {showDropdown && filteredMentees.length > 0 && (
+                                <div className="absolute top-full left-0 right-0 bg-deeper-grey border border-gray-600 rounded-lg mt-1 max-h-60 overflow-y-auto z-10">
+                                    {filteredMentees.map((mentee, index) => (
+                                        <div
+                                            key={index}
+                                            className="px-3 py-2 sm:px-4 md:px-6 md:py-3 hover:bg-gray-700 cursor-pointer text-primary-yellow"
+                                            onClick={() => handleMenteeSelect(mentee.name)}
+                                        >
+                                            {mentee.name}
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                            
+                            {/* No results message */}
+                            {showDropdown && searchTerm.trim() && filteredMentees.length === 0 && (
+                                <div className="absolute top-full left-0 right-0 bg-deeper-grey border border-gray-600 rounded-lg mt-1 z-10">
+                                    <div className="px-3 py-2 sm:px-4 md:px-6 md:py-3 text-gray-400">
+                                        No mentees found
+                                    </div>
+                                </div>
+                            )}
+                        </div>
                     </div>
                 </div>
                 <div className="flex justify-between mt-4 sm:mt-6 md:mt-10">
@@ -386,14 +459,13 @@ const MentorDashboard = () => {
                         isLoading = {loading} 
                         mentor={true} 
                         task={currentTask}
-                        status={currentTask && selectedMentee ? menteeSubmissions[selectedMentee]?.[currentTask.id] : undefined}
+                        status={currentTask ? menteeSubmissions[currentTask.id] : undefined}
                     />
                 </div>
                 <div className="flex flex-col lg:flex-row justify-between mt-4 sm:mt-6 md:mt-10 gap-6 lg:gap-0">
                     <div className="flex flex-col gap-2 w-full lg:w-[46%]">
                         <PlayerStats rank={menteeDetails.position} points={menteeDetails.total_points} />
                         <Badges />
-                        {/* Updated to use submitted tasks count instead of completed tasks */}
                         <PlayerProgress tasks={submittedTasksCount} totaltasks={totaltask} />
                     </div>
                     <div className="flex flex-col gap-4 w-full lg:w-[50%]">
@@ -407,7 +479,7 @@ const MentorDashboard = () => {
                         </div>
                         <FeedbackProvided 
                             selectedMentee={selectedMentee}
-                            menteeSubmissions={menteeFullSubmissions}
+                            menteeSubmissions={{[selectedMentee || '']: menteeFullSubmissions}}
                             tasks={tasks}
                         />
                     </div>
