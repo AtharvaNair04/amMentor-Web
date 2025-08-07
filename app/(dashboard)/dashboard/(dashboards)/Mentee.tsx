@@ -85,15 +85,44 @@ const MenteeDashboard = () => {
     }, [tasks, mySubmissions]);
 
     const getCurrentTask = useCallback((): Task | null => {
-        // Find the latest unlocked task that is not reviewed
-        const unlockedTasks = tasks.filter(task => isTaskUnlocked(task.task_no));
+        // Sort tasks by task_no to ensure proper order
+        const sortedTasks = tasks.sort((a, b) => a.task_no - b.task_no);
+        
+        // Find the first not started task
+        const notStartedTask = sortedTasks.find(task => {
+            const status = mySubmissions[task.task_no] || 'Not Started';
+            const unlocked = isTaskUnlocked(task.task_no);
+            return status === 'Not Started' && unlocked;
+        });
+        
+        if (notStartedTask) {
+            return notStartedTask;
+        }
+        
+        // If no not started tasks, find the next task after the latest submitted task
+        const submittedTasks = sortedTasks.filter(task => {
+            const status = mySubmissions[task.task_no] || 'Not Started';
+            return status === 'Submitted';
+        });
+        
+        if (submittedTasks.length > 0) {
+            // Get the latest submitted task
+            const latestSubmitted = submittedTasks[submittedTasks.length - 1];
+            // Find the next task after it
+            const nextTask = sortedTasks.find(task => task.task_no > latestSubmitted.task_no);
+            if (nextTask && isTaskUnlocked(nextTask.task_no)) {
+                return nextTask;
+            }
+        }
+        
+        // Fallback: return any unlocked non-reviewed task
+        const unlockedTasks = sortedTasks.filter(task => isTaskUnlocked(task.task_no));
         const currentTasks = unlockedTasks.filter(task => {
             const status = mySubmissions[task.task_no] || 'Not Started';
             return status !== 'Reviewed';
         });
         
-        // Return the latest (highest task_no) current task
-        return currentTasks.length > 0 ? currentTasks[currentTasks.length - 1] : null;
+        return currentTasks.length > 0 ? currentTasks[0] : null;
     }, [tasks, mySubmissions, isTaskUnlocked]);
 
     const getFormattedTasks = (): string[][] => {
@@ -247,11 +276,8 @@ const MenteeDashboard = () => {
                 <div className="flex flex-col sm:flex-row justify-between">
                     <div className="flex text-xl sm:text-2xl md:text-3xl gap-1 mb-4 sm:mb-0">
                         <h1>Welcome, </h1>
-                        <h1 className="text-primary-yellow">Mentee</h1>
+                        <h1 className="text-primary-yellow">Padawan</h1>
                     </div>
-                    <Link href="/track" className="text-primary-yellow underline mb-6 sm:mb-0">
-                        Change Track
-                    </Link>
                 </div>
                 <div className="flex justify-between mt-4 sm:mt-6 md:mt-10">
                     <CurrentTask 

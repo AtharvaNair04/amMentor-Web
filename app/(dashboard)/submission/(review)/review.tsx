@@ -138,11 +138,12 @@ const SubmissionReview = ({
   const isTaskUnlocked = (currentTaskId: string): boolean => {
     if (isMentor) return true; // Mentors can access any task
     
-    const currentId = parseInt(currentTaskId);
-    if (currentId <= 1) return true; // First task is always unlocked
+    const currentTaskNo = parseInt(currentTaskId);
+    if (currentTaskNo <= 1) return true; // First task is always unlocked
     
-    const previousTaskId = currentId - 1;
-    const previousTask = localTasks.find(task => task.id === previousTaskId);
+    // Find the previous task by task_no
+    const previousTaskNo = currentTaskNo - 1;
+    const previousTask = localTasks.find(task => task.task_no === previousTaskNo);
     
     // If previous task doesn't exist, don't unlock
     if (!previousTask) {
@@ -155,7 +156,7 @@ const SubmissionReview = ({
     }
     
     // Otherwise, check if previous task is completed
-    const previousTaskStatus = allSubmissions[previousTaskId];
+    const previousTaskStatus = allSubmissions[previousTaskNo];
     return previousTaskStatus === 'Submitted' || previousTaskStatus === 'Reviewed';
   };
 
@@ -212,6 +213,7 @@ const SubmissionReview = ({
         if (res.ok) {
           const submissions: SubmissionResponse[] = await res.json();
           
+          // FIXED: Use taskId directly since it's already task_no from the main page
           const taskSubmission = submissions.find((s: SubmissionResponse) => s.task_id === parseInt(taskId));
           
           if (taskSubmission) {
