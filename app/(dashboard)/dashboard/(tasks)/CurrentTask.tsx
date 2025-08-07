@@ -23,7 +23,7 @@ export default function CurrentTask({ mentor = false, task, status , isLoading }
     const router = useRouter();
     
     const formatDeadline = (deadline: string | number | null): string => {
-        if (!deadline) return "No deadline";
+        if (!deadline) return "";
         if (typeof deadline === 'number') return `${deadline} days`;
         return deadline;
     };
@@ -34,7 +34,7 @@ export default function CurrentTask({ mentor = false, task, status , isLoading }
         } else {
             if (status === 'Reviewed') return "View Feedback";
             if (status === 'Submitted') return "View Submission";
-            return "Submit Work";
+            return "Start Task"; 
         }
     };
 
@@ -60,8 +60,7 @@ export default function CurrentTask({ mentor = false, task, status , isLoading }
                     <div>
                         <h2 className="font-bold text-lg sm:text-xl text-primary-yellow md:text-2xl">No Current Task</h2>
                         <p className="text-sm sm:text-base mt-2">
-                            
-                            {mentor ? "No submitted tasks to review" : "All tasks completed or none available"}
+                            {mentor ? "No submitted tasks to review" : "All tasks completed! Great job!"}
                         </p>
                     </div>
                     }
@@ -77,7 +76,8 @@ export default function CurrentTask({ mentor = false, task, status , isLoading }
         >
             <div className="h-full mb-4 sm:mb-0">
                 <h3 className="font-bold text-xs sm:text-sm md:text-base">
-                    {mentor ? "LATEST SUBMITTED TASK" : "CURRENT TASK"}
+                    {mentor ? "LATEST SUBMITTED TASK" : 
+                     (status ? "CURRENT TASK" : "NEXT TASK")}
                 </h3>
                 <h2 className="font-bold text-lg sm:text-xl md:text-3xl mt-1 sm:mt-2 md:mt-5">
                     Task-{(task.task_no + 1).toString().padStart(2, '0')}
@@ -106,7 +106,7 @@ export default function CurrentTask({ mentor = false, task, status , isLoading }
                 <button 
                     className={`${getButtonColor()} text-white font-extrabold rounded-xl md:rounded-3xl pb-1 mt-2 sm:mt-1 md:mt-0 hover:opacity-80 transition-opacity duration-200`}
                     onClick={(e) => {
-                        e.stopPropagation(); // Prevent triggering the parent div's onClick
+                        e.stopPropagation(); 
                         handleTaskClick();
                     }}
                 >

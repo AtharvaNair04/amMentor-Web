@@ -95,7 +95,7 @@ const MentorDashboard = () => {
     // Fetch available tracks
     const fetchTracks = useCallback(async () => {
         try {
-            const response = await fetch('https://amapi.amfoss.in/tracks/');
+            const response = await fetch('https://praveshan.ganidande.com/tracks/');
             if (!response.ok) throw new Error('Failed to fetch tracks');
             const tracksData: TrackData[] = await response.json();
             setTracks(tracksData.map((track: TrackData) => ({ id: track.id, name: track.title })));
@@ -202,7 +202,7 @@ const MentorDashboard = () => {
             // Fetch submissions per track instead of per task
             for (const [trackId, tasksInTrack] of Object.entries(tasksByTrack)) {
                 try {
-                    const res = await fetch(`https://amapi.amfoss.in/submissions/?email=${encodeURIComponent(mentee.email)}&track_id=${trackId}`);
+                    const res = await fetch(`https://praveshan.ganidande.com/submissions/?email=${encodeURIComponent(mentee.email)}&track_id=${trackId}`);
                     
                     if (res.ok) {
                         const submissions: SubmissionData[] = await res.json();
@@ -242,7 +242,7 @@ const MentorDashboard = () => {
             const mentorTrack = sessionStorage.getItem("mentorCurrentTrack");
             const track: { id: number; name: string } = mentorTrack ? JSON.parse(mentorTrack) : { id: 1, name: "" };
             
-            const data = await fetch(`https://amapi.amfoss.in/leaderboard/${track.id}`);
+            const data = await fetch(`https://praveshan.ganidande.com/leaderboard/${track.id}`);
             if (!data.ok) {
                 throw new Error("Failed to fetch Points and Rank!");
             }
@@ -283,7 +283,7 @@ const MentorDashboard = () => {
         try {
             const trackId = currentTrack?.id || 1; // Use current track or fallback to 1
             
-            const response = await fetch(`https://amapi.amfoss.in/tracks/${trackId}/tasks`);
+            const response = await fetch(`https://praveshan.ganidande.com/tracks/${trackId}/tasks`);
             
             if (!response.ok) {
                 throw new Error('Failed to fetch tasks');

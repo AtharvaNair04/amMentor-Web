@@ -112,7 +112,7 @@ const SubmissionReview = ({
           }
         }
 
-        const res = await fetch(`https://amapi.amfoss.in/tracks/${currentTrackId}/tasks`);
+        const res = await fetch(`https://praveshan.ganidande.com/tracks/${currentTrackId}/tasks`);
         if (res.ok) {
           const tasksData: TaskApiResponse[] = await res.json();
           const formattedTasks: Task[] = tasksData.map(task => ({
@@ -208,7 +208,7 @@ const SubmissionReview = ({
           return;
         }
         
-        const res = await fetch(`https://amapi.amfoss.in/submissions/?email=${encodeURIComponent(email)}&track_id=${currentTrackId}`);
+        const res = await fetch(`https://praveshan.ganidande.com/submissions/?email=${encodeURIComponent(email)}&track_id=${currentTrackId}`);
         if (res.ok) {
           const submissions: SubmissionResponse[] = await res.json();
           
@@ -294,7 +294,7 @@ const SubmissionReview = ({
     };
 
     try {
-      const res = await fetch('https://amapi.amfoss.in/progress/submit-task', {
+      const res = await fetch('https://praveshan.ganidande.com/progress/submit-task', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

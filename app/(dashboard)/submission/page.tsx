@@ -112,7 +112,7 @@ const TasksPageContent = () => {
         if (!trackId) return [];
 
         try {
-            const response = await fetch(`https://amapi.amfoss.in/tracks/${trackId}/tasks`);
+            const response = await fetch(`https://praveshan.ganidande.com/tracks/${trackId}/tasks`);
             if (!response.ok) throw new Error('Failed to fetch tasks');
             const data = await response.json();
             setTasks(data);
@@ -132,7 +132,7 @@ const TasksPageContent = () => {
         results[selectedMentee] = {};
         
         try {
-            const res = await fetch(`https://amapi.amfoss.in/submissions/?email=${encodeURIComponent(selectedMenteeEmail)}&track_id=${trackId}`);
+            const res = await fetch(`https://praveshan.ganidande.com/submissions/?email=${encodeURIComponent(selectedMenteeEmail)}&track_id=${trackId}`);
             
             if (res.ok) {
                 const submissions: Submission[] = await res.json();
@@ -168,7 +168,7 @@ const TasksPageContent = () => {
         const results: Record<number, string> = {};
         
         try {
-            const res = await fetch(`https://amapi.amfoss.in/submissions/?email=${encodeURIComponent(userEmail)}&track_id=${trackId}`);
+            const res = await fetch(`https://praveshan.ganidande.com/submissions/?email=${encodeURIComponent(userEmail)}&track_id=${trackId}`);
             
             if (res.ok) {
                 const submissions: Submission[] = await res.json();

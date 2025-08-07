@@ -132,7 +132,7 @@ const MenteeDashboard = () => {
         let allSubmissions: SubmissionData[] = [];
         
         try {
-            const res = await fetch(`https://amapi.amfoss.in/submissions/?email=${encodeURIComponent(userEmail)}&track_id=${trackId}`);
+            const res = await fetch(`https://praveshan.ganidande.com/submissions/?email=${encodeURIComponent(userEmail)}&track_id=${trackId}`);
             
             if (res.ok) {
                 const submissions: SubmissionData[] = await res.json();
@@ -171,7 +171,7 @@ const MenteeDashboard = () => {
                 const currentTrack = sessionStorage.getItem("currentTrack");
                 const track: { id: number; name: string } = currentTrack ? JSON.parse(currentTrack) : { id: 0, name: "" };
         
-                const data = await fetch(`https://amapi.amfoss.in/leaderboard/${track.id}`);
+                const data = await fetch(`https://praveshan.ganidande.com/leaderboard/${track.id}`);
                 if (!data.ok) {
                     throw new Error("Failed to fetch Points and Rank!");
                 }  
@@ -210,7 +210,7 @@ const MenteeDashboard = () => {
                 const trackData = JSON.parse(sessionTrack);
                 const trackId = trackData.id;
                 
-                const response = await fetch(`https://amapi.amfoss.in/tracks/${trackId}/tasks`);
+                const response = await fetch(`https://praveshan.ganidande.com/tracks/${trackId}/tasks`);
                 
                 if (!response.ok) {
                     throw new Error('Failed to fetch tasks');

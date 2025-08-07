@@ -6,7 +6,7 @@ export interface LeaderboardEntry {
 
 export async function fetchPlayerdata(trackid: number) {
     // Use the trackid parameter instead of hardcoded 1
-    const data = await fetch("https://amapi.amfoss.in/leaderboard/" + trackid);
+    const data = await fetch("https://praveshan.ganidande.com/leaderboard/" + trackid);
     const response = await data.json();
     const players: LeaderboardEntry[] = response["leaderboard"].map((element: { mentee_name: string; total_points: number }, index: number) => ({
         position: index + 1,
@@ -17,7 +17,7 @@ export async function fetchPlayerdata(trackid: number) {
 }
 
 export async function fetchtrack() {
-    const data = await fetch("https://amapi.amfoss.in/tracks/");    
+    const data = await fetch("https://praveshan.ganidande.com/tracks/");    
     const response: { id: number; title: string }[] = await data.json();
     const tracks: { id: number; name: string }[] = response.map((element) => ({
         id: element.id,

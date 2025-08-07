@@ -78,7 +78,7 @@ const MentorSection = ({
     };
 
     try {
-      const res = await fetch('https://amapi.amfoss.in/progress/approve-task', {
+      const res = await fetch('https://praveshan.ganidande.com/progress/approve-task', {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',

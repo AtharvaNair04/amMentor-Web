@@ -16,7 +16,7 @@ export default function LoginPage() {
   const router = useRouter();
   const { login, isLoggedIn } = useAuth();
 
-  const API_URL = 'https://amapi.amfoss.in/';
+  const API_URL = 'https://praveshan.ganidande.com/';
 
   useEffect(() => {
     const emailInStorage = localStorage.getItem('email');

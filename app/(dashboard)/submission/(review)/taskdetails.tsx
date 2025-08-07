@@ -179,7 +179,7 @@ const TaskDetails = ({
     // Optionally, you can also send this to your backend API here
     try {
       // You can create an API endpoint to track task starts if needed
-      // await fetch('https://amapi.amfoss.in/tasks/start', {
+      // await fetch('https://praveshan.ganidande.com/tasks/start', {
       //   method: 'POST',
       //   headers: { 'Content-Type': 'application/json' },
       //   body: JSON.stringify(startData)
@@ -233,7 +233,7 @@ const TaskDetails = ({
     };
 
     try {
-      const res = await fetch('https://amapi.amfoss.in/progress/submit-task', {
+      const res = await fetch('https://praveshan.ganidande.com/progress/submit-task', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -267,7 +267,7 @@ const TaskDetails = ({
         setLoading(true);
         // Use the track ID from props if available, otherwise default to 1
         const fetchTrackId = trackId || 1;
-        const res = await fetch(`https://amapi.amfoss.in/tracks/${fetchTrackId}/tasks`);
+        const res = await fetch(`https://praveshan.ganidande.com/tracks/${fetchTrackId}/tasks`);
         const tasks: TaskApiResponse[] = await res.json();
         const foundTask = tasks.find((t: TaskApiResponse) => String(t.id) === String(taskId));
         if (foundTask) {
