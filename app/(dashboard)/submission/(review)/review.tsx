@@ -107,20 +107,19 @@ const SubmissionReview = ({
               const trackData = JSON.parse(sessionTrack);
               currentTrackId = trackData.id;
             } else {
-              console.log('No track found in sessionStorage');
               return;
             }
           }
         }
 
-        const res = await fetch(`https://amapi.amfoss.in/tracks/${currentTrackId}/tasks`);
+        const res = await fetch(`https://praveshan.ganidande.com/tracks/${currentTrackId}/tasks`);
         if (res.ok) {
           const tasksData: TaskApiResponse[] = await res.json();
           const formattedTasks: Task[] = tasksData.map(task => ({
             id: task.id,
             title: task.title,
             description: task.description,
-            deadline: null,//task.deadline,
+            deadline: task.deadline,
             track_id: task.track_id,
             task_no: task.task_no,
             points: task.points,
@@ -152,7 +151,6 @@ const SubmissionReview = ({
     
     // CRITICAL FIX: If previous task has null deadline, current task is automatically unlocked
     if (previousTask.deadline === null) {
-      console.log(`Task ${currentId} unlocked because previous task ${previousTaskId} has null deadline`);
       return true;
     }
     
@@ -165,7 +163,6 @@ const SubmissionReview = ({
   useEffect(() => {
     const fetchSubmissionData = async () => {
       if (!taskId) {
-        console.log('Missing taskId:', { taskId });
         return;
       }
 
@@ -175,8 +172,14 @@ const SubmissionReview = ({
       // If trackId is not provided or is null, try to get it from different sources
       if (!currentTrackId) {
         if (isMentor) {
-          // For mentors, default to track 1
-          currentTrackId = 1;
+          // For mentors, get from session storage or default to track 1
+          const mentorTrack = sessionStorage.getItem('mentorCurrentTrack');
+          if (mentorTrack) {
+            const trackData = JSON.parse(mentorTrack);
+            currentTrackId = trackData.id;
+          } else {
+            currentTrackId = 1;
+          }
         } else {
           // For mentees, get from sessionStorage
           const sessionTrack = sessionStorage.getItem('currentTrack');
@@ -184,13 +187,10 @@ const SubmissionReview = ({
             const trackData = JSON.parse(sessionTrack);
             currentTrackId = trackData.id;
           } else {
-            console.log('No track found in sessionStorage');
             return;
           }
         }
       }
-
-      console.log('Using trackId:', currentTrackId);
 
       setLoading(true);
       try {
@@ -204,20 +204,15 @@ const SubmissionReview = ({
         }
 
         if (!email) {
-          console.log('No email found');
           setLoading(false);
           return;
         }
-        console.log("email) si ",menteeId);
-        console.log('Fetching submission data for:', { email, trackId: currentTrackId, taskId });
-
-        const res = await fetch(`https://amapi.amfoss.in/submissions/?email=${encodeURIComponent(email)}&track_id=${currentTrackId}`);
+        
+        const res = await fetch(`https://praveshan.ganidande.com/submissions/?email=${encodeURIComponent(email)}&track_id=${currentTrackId}`);
         if (res.ok) {
           const submissions: SubmissionResponse[] = await res.json();
-          console.log('All submissions:', submissions);
           
           const taskSubmission = submissions.find((s: SubmissionResponse) => s.task_id === parseInt(taskId));
-          console.log('Found task submission:', taskSubmission);
           
           if (taskSubmission) {
             setSubmissionData(taskSubmission);
@@ -226,7 +221,6 @@ const SubmissionReview = ({
             // Normalize the status from API
             const normalizedStatus = normalizeStatus(taskSubmission.status);
             setTaskStatus(normalizedStatus);
-            console.log('Set task status to:', normalizedStatus);
 
             // Set submission text - use reference_link if submission_text is empty
             if (taskSubmission.submission_text) {
@@ -237,7 +231,6 @@ const SubmissionReview = ({
               setSubmissionText('');
             }
           } else {
-            console.log('No submission found for task:', taskId);
             // Reset to default values when no submission found
             setSubmissionText('');
             setMentorNotes('');
@@ -301,7 +294,7 @@ const SubmissionReview = ({
     };
 
     try {
-      const res = await fetch('https://amapi.amfoss.in/progress/submit-task', {
+      const res = await fetch('https://praveshan.ganidande.com/progress/submit-task', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

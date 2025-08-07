@@ -46,7 +46,7 @@ export const MenteeProvider = ({ children }: MenteeProviderProps) => {
         const fetchMentees = async () => {
             try {
                 const mentorEmail = localStorage.getItem("email") || 'atharvanair04@gmail.com';
-                const data = await fetch(`https://amapi.amfoss.in/mentors/${encodeURIComponent(mentorEmail)}/mentees`);
+                const data = await fetch(`https://praveshan.ganidande.com/mentors/${encodeURIComponent(mentorEmail)}/mentees`);
                 
                 if (!data.ok) {
                     throw new Error("Failed to fetch Mentees!");

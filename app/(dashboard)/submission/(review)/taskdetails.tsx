@@ -80,7 +80,6 @@ const TaskDetails = ({
         const startData: TaskStartData = JSON.parse(storedStartData);
         setStartDate(startData.startDate);
         setHasStarted(true);
-        console.log('Loaded start date from storage:', startData.startDate);
       } catch (error) {
         console.error('Error parsing stored start data:', error);
       }
@@ -124,26 +123,17 @@ const TaskDetails = ({
     
     // If previous task doesn't exist, don't unlock
     if (!previousTask) {
-      console.log(`Task ${currentId} locked because previous task ${previousTaskId} not found`);
       return false;
     }
     
     // CRITICAL FIX: If previous task has null deadline, current task is automatically unlocked
     if (previousTask.deadline === null) {
-      console.log(`Task ${currentId} unlocked because previous task ${previousTaskId} has null deadline`);
       return true;
     }
     
     // Otherwise, check if previous task is completed
     const previousTaskStatus = allSubmissions[previousTaskId];
     const isUnlocked = previousTaskStatus === 'Submitted' || previousTaskStatus === 'Reviewed';
-    
-    console.log(`Task ${currentId} unlock check:`, {
-      previousTaskId,
-      previousTaskDeadline: previousTask.deadline,
-      previousTaskStatus,
-      isUnlocked
-    });
     
     return isUnlocked;
   };
@@ -186,12 +176,10 @@ const TaskDetails = ({
     setStartDate(currentStartDate);
     setHasStarted(true);
     
-    console.log('Task started:', startData);
-    
     // Optionally, you can also send this to your backend API here
     try {
       // You can create an API endpoint to track task starts if needed
-      // await fetch('https://amapi.amfoss.in/tasks/start', {
+      // await fetch('https://praveshan.ganidande.com/tasks/start', {
       //   method: 'POST',
       //   headers: { 'Content-Type': 'application/json' },
       //   body: JSON.stringify(startData)
@@ -244,10 +232,8 @@ const TaskDetails = ({
       mentee_email: email,
     };
 
-    console.log('Submitting with start date:', submissionStartDate);
-
     try {
-      const res = await fetch('https://amapi.amfoss.in/progress/submit-task', {
+      const res = await fetch('https://praveshan.ganidande.com/progress/submit-task', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -281,7 +267,7 @@ const TaskDetails = ({
         setLoading(true);
         // Use the track ID from props if available, otherwise default to 1
         const fetchTrackId = trackId || 1;
-        const res = await fetch(`https://amapi.amfoss.in/tracks/${fetchTrackId}/tasks`);
+        const res = await fetch(`https://praveshan.ganidande.com/tracks/${fetchTrackId}/tasks`);
         const tasks: TaskApiResponse[] = await res.json();
         const foundTask = tasks.find((t: TaskApiResponse) => String(t.id) === String(taskId));
         if (foundTask) {
@@ -289,7 +275,7 @@ const TaskDetails = ({
             id: foundTask.id,
             title: foundTask.title,
             description: foundTask.description,
-            deadline: null,//foundTask.deadline,
+            deadline: foundTask.deadline,
             track_id: foundTask.track_id,
             task_no: foundTask.task_no,
             points: foundTask.points,
@@ -315,21 +301,27 @@ const TaskDetails = ({
   // Update canEdit logic to use the corrected unlock status
   const canEditTask = !isMentor && taskUnlocked && (taskStatus === 'In Progress' || taskStatus === 'Not Started') && hasStarted;
 
-  // const getProgressColor = (): string => {
-  //   if (!task?.deadline) return 'green';
-  //   const remaining = getDaysRemaining();
-  //   const total = task.deadline;
-  //   const percentRemaining = (remaining / total) * 100;
+  // Calculate days remaining for display
+  const getDaysRemaining = (): number => {
+    if (!task?.deadline || !startDate) return 0;
+    return Math.max(0, task.deadline - daysElapsed);
+  };
+
+  const getProgressColor = (): string => {
+    if (!task?.deadline) return 'green';
+    const remaining = getDaysRemaining();
+    const total = task.deadline;
+    const percentRemaining = (remaining / total) * 100;
     
-  //   if (percentRemaining > 50) return 'green';
-  //   if (percentRemaining > 25) return 'yellow';
-  //   return 'red';
-  // };
+    if (percentRemaining > 50) return 'green';
+    if (percentRemaining > 25) return 'yellow';
+    return 'red';
+  };
 
   if (loading) {
     return <div className="text-white">Loading task details...</div>;
   }
-  console.log(task?.deadline);
+
   return (
      <div className="w-full md:w-2/3 md:pr-8 mb-6 md:mb-0">
       <div className="mb-4 md:mb-6 px-4 md:px-0 py-2 md:py-4">
@@ -393,15 +385,15 @@ const TaskDetails = ({
       <div className="mb-8 md:mb-10">
         {!isMentor && (
           <>
-            {/* <h2 className="font-bold mb-4 md:mb-6 text-white-text">PROGRESS</h2> */}
+            <h2 className="font-bold mb-4 md:mb-6 text-white-text">PROGRESS</h2>
             
             <div className="relative mb-6">
-              {/* <div className="text-xs absolute -top-6 left-1/2 transform -translate-x-1/2 text-gray-300">
+              <div className="text-xs absolute -top-6 left-1/2 transform -translate-x-1/2 text-gray-300">
                 {task?.deadline === null ? 'NO DEADLINE' : 
                  hasStarted && startDate ? `${getDaysRemaining()} DAYS LEFT` : 
                  task?.deadline ? `${task.deadline} DAYS TOTAL` : ''}
-              </div> */}
-              {/* <div className={`h-2 w-full bg-gradient-to-r from-green via-yellow-400 to-red rounded-full`}>
+              </div>
+              <div className={`h-2 w-full bg-gradient-to-r from-green via-yellow-400 to-red rounded-full`}>
                 <div className="relative">
                   <div 
                     className="absolute -top-2 w-5 h-5 md:w-6 md:h-6 bg-white rounded-full border-2 border-black transition-all duration-1000 ease-out"
@@ -417,11 +409,11 @@ const TaskDetails = ({
               </div>
               <div className="text-xs absolute -bottom-6 left-0 text-gray-300">
                 START
-              </div> */}
+              </div>
             </div>
             
             {/* Progress Stats */}
-            {/* {hasStarted && startDate && task?.deadline && (
+            {hasStarted && startDate && task?.deadline && (
               <div className="flex justify-between text-xs mt-8 text-gray-400">
                 <span>Day {daysElapsed}</span>
                 <span className={`text-${getProgressColor()}-400 font-semibold`}>
@@ -429,13 +421,13 @@ const TaskDetails = ({
                 </span>
                 <span>Day {task.deadline}</span>
               </div>
-            )} */}
+            )}
             
-            {/* {task?.deadline === null && (
+            {task?.deadline === null && (
               <div className="text-center text-xs mt-8 text-green-400">
                 ✅ This task has no deadline - take your time!
               </div>
-            )} */}
+            )}
 
             {/* Time tracking info */}
             {hasStarted && startDate && (

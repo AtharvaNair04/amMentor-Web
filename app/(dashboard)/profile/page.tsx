@@ -13,9 +13,7 @@ import {
 } from 'react-icons/fa';
 import { useAuth } from '@/app/context/authcontext';
 
-
-
-const API_URL = 'https://amapi.amfoss.in/';
+const API_URL = 'https://praveshan.ganidande.com/';
 
 const ProfilePage = () => {
   const { logout } = useAuth();
@@ -43,12 +41,11 @@ const ProfilePage = () => {
         router.push('/login');
       }
     };
-    const cached_profile = sessionStorage.getItem("cache_profile");
-    if(cached_profile){
-      setUser(JSON.parse(cached_profile));
-    }
-    else{
-
+    
+    const cachedProfile = sessionStorage.getItem("cache_profile");
+    if (cachedProfile) {
+      setUser(JSON.parse(cachedProfile));
+    } else {
       fetchUser();
     }
   }, [logout, router]);
