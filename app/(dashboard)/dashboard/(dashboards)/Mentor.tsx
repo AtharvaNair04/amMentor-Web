@@ -5,7 +5,7 @@ import CurrentTask from "../(tasks)/CurrentTask";
 import Badges from "../(user)/Badges";
 import PlayerProgress from "../(user)/PlayerProgress";
 import PlayerStats from "../(user)/PlayerStats";
-import { JSX, useEffect, useMemo, useState, useCallback } from 'react';
+import { useEffect, useMemo, useState, useCallback } from 'react';
 import { useMentee } from "@/app/context/menteeContext";
 
 interface Task {

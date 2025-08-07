@@ -1,6 +1,4 @@
 'use client';
-
-import Link from "next/link";
 import { ReviewedTask, UpcomingTask, FeedbackProvided } from "../(tasks)/ListViews";
 import CurrentTask from "../(tasks)/CurrentTask";
 import PlayerStats from "../(user)/PlayerStats";

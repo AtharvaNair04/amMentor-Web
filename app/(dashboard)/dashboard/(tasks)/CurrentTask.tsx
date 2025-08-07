@@ -21,12 +21,6 @@ interface CurrentTaskProps {
 
 export default function CurrentTask({ mentor = false, task, status , isLoading }: CurrentTaskProps) {
     const router = useRouter();
-    
-    const formatDeadline = (deadline: string | number | null): string => {
-        if (!deadline) return "";
-        if (typeof deadline === 'number') return `${deadline} days`;
-        return deadline;
-    };
 
     const getButtonText = (): string => {
         if (mentor) {

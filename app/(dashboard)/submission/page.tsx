@@ -238,10 +238,9 @@ const TasksPageContent = () => {
     const getFormattedTasks = useCallback((): string[][] => {
     const filteredTasks = getFilteredTasks();
     
-    return filteredTasks.map((task, index) => {
+    return filteredTasks.map((task) => {
         if (ismentor && selectedMentee && menteeSubmissions[selectedMentee]) {
             const status = menteeSubmissions[selectedMentee][task.task_no] || 'Not Started';
-            // Use index + 1 for display, but keep task.task_no for internal logic
             return [task.task_no.toString(), task.title, status];
         } else if (!ismentor && Object.keys(mySubmissions).length > 0) {
             const status = mySubmissions[task.task_no] || 'Not Started';
