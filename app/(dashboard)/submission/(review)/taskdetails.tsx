@@ -61,6 +61,7 @@ const TaskDetails = ({
   const [startDate, setStartDate] = useState<string | null>(null);
   const [daysElapsed, setDaysElapsed] = useState(0);
   const [progressPercentage, setProgressPercentage] = useState(0);
+  const [submitText,setSubmitText] = useState("Submit Task");
 
   // Generate storage key for this specific task and user
   const getStorageKey = (taskId: string, email: string): string => {
@@ -83,6 +84,8 @@ const TaskDetails = ({
       } catch (error) {
         console.error('Error parsing stored start data:', error);
       }
+    }else{
+      handleStartTask();
     }
   }, [taskId]);
 
@@ -190,6 +193,8 @@ const TaskDetails = ({
     }
   };
 
+
+
   // Enhanced submit function to use stored start date
   const handleSubmitTask = async () => {
     const email = localStorage.getItem('email');
@@ -197,6 +202,7 @@ const TaskDetails = ({
       alert('Email not found. Please log in again.');
       return;
     }
+    setSubmitText("Submitting");
 
     // Get the correct trackId for submission
     let currentTrackId = trackId;
@@ -227,8 +233,8 @@ const TaskDetails = ({
     const body = {
       track_id: Number(currentTrackId),
       task_no: Number(taskId),
-      reference_link: submissionText.trim(),
       start_date: submissionStartDate, // Use the stored start date
+      commit_hash: submissionText.trim(),
       mentee_email: email,
     };
 
@@ -251,14 +257,17 @@ const TaskDetails = ({
       alert('Task submitted successfully!');
       // Call the original onSubmitTask to update parent component
       onSubmitTask();
+      //Refresh data
+      fetchTask();
+      setSubmitText("task submitted");
     } catch (err) {
       console.error('Submission error:', err);
       alert('An error occurred while submitting the task.');
+      setSubmitText("Submit Task");
     }
   };
 
-  useEffect(() => {
-    const fetchTask = async () => {
+  const fetchTask = async () => {
       if (!taskId) {
         setLoading(false);
         return;
@@ -271,7 +280,7 @@ const TaskDetails = ({
         
         // Compare with task_no directly since taskId is now task_no
         const foundTask = tasks.find((t: TaskApiResponse) => t.task_no === parseInt(taskId));
-        
+        console.log(foundTask);
         if (foundTask) {
           setTask({
             id: foundTask.id,
@@ -292,6 +301,8 @@ const TaskDetails = ({
         setLoading(false);
       }
     };
+
+  useEffect(() => {
     fetchTask();
 }, [trackId, taskId]);
 
@@ -338,9 +349,9 @@ const TaskDetails = ({
           {task?.deadline !== null && task?.deadline && (
             <p className="text-yellow-400 text-sm">📅 Deadline: {task.deadline} days</p>
           )}
-          {startDate && (
+          {/* {startDate && (
             <p className="text-blue-400 text-sm">🚀 Started: {new Date(startDate).toLocaleDateString()}</p>
-          )}
+          )} */}
           {isMentor && menteeId && (
             <p className="text-primary-yellow font-semibold mt-2">Mentee: {menteeId}</p>
           )}
@@ -361,14 +372,14 @@ const TaskDetails = ({
               Status: {showLockedMessage ? 'Locked' : hasStarted && taskStatus === 'Not Started' ? 'In Progress' : taskStatus}
             </span>
             
-            {canStartTask && (
+            {/* {canStartTask && (
               <button
                 onClick={handleStartTask}
                 className="ml-4 px-4 py-1 bg-primary-yellow text-dark-bg rounded-full text-xs font-semibold hover:bg-yellow-400 transition-colors"
               >
                 START TASK
               </button>
-            )}
+            )} */}
           </div>
           
           {/* Locked Task Message */}
@@ -431,7 +442,7 @@ const TaskDetails = ({
               </div>
             )}
 
-            {/* Time tracking info */}
+            {/* Time tracking info
             {hasStarted && startDate && (
               <div className="mt-4 p-3 bg-blue-900 bg-opacity-30 rounded-md">
                 <div className="text-sm text-blue-300">
@@ -446,7 +457,7 @@ const TaskDetails = ({
                   </div>
                 )}
               </div>
-            )}
+            )} */}
           </>
         )}
 
@@ -468,7 +479,7 @@ const TaskDetails = ({
         )}
       </div>
       
-      <div className="mb-8 md:mb-10">
+      <div className="mb-8 mt-8 md:mb-10">
         <h2 className="font-bold mb-3 md:mb-4 text-white-text">WORK SUBMISSION</h2>
         
         {!isMentor ? (
@@ -487,15 +498,17 @@ const TaskDetails = ({
               <>
                 <textarea
                   value={submissionText}
+                  readOnly={submitText != "Submit Task"}
                   onChange={(e) => setSubmissionText(e.target.value)}
-                  placeholder="Submit your work link or description here... (e.g. https://github.com/yourname/task-solution)"
+                  placeholder="Submit your commit hash here."
                   className="w-full bg-dark-grey rounded-md p-3 md:p-4 min-h-[100px] md:min-h-[120px] text-sm md:text-base text-white-text mb-4 md:mb-6 resize-none border-none outline-none placeholder-gray-500"
                 />
                 
                 <div className="flex justify-center">
+                  {submitText != "task submitted" ? (
                   <button 
                     type="submit"
-                    disabled={!submissionText.trim()}
+                    disabled={!submissionText.trim() || submitText != "Submit Task"}
                     onClick={(e) => {
                       e.preventDefault();
                       if (submissionText.trim()) {
@@ -503,13 +516,20 @@ const TaskDetails = ({
                       }
                     }}
                     className={`px-6 md:px-10 py-2 rounded-full text-sm md:text-md font-bold shadow-md ${
-                      !submissionText.trim()
+                      !submissionText.trim()  || submitText != "Submit Task"
                         ? "bg-gray-600 text-gray-400 cursor-not-allowed"
-                        : "bg-primary-yellow text-dark-bg hover:shadow-xl transition-shadow"
+                        : "bg-primary-yellow hover:bg-[#b18820] text-dark-bg hover:shadow-xl transition-shadow"
                     }`}
                   >
-                    SUBMIT TASK
-                  </button>
+                    {submitText}
+                  </button>)
+                  :
+                  <div className="text-center">
+                    <p className="text-primary-yellow font-semibold">
+                      ✅ Task submitted! Waiting for review.
+                    </p>
+                  </div>
+                  }
                 </div>
               </>
             ) : showLockedMessage ? (

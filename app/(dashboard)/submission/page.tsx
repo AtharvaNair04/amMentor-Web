@@ -20,6 +20,7 @@ interface Task {
 
 interface Submission {
     task_id: number;
+    task_no:number; 
     status: string;
 }
 
@@ -172,9 +173,10 @@ const TasksPageContent = () => {
             
             if (res.ok) {
                 const submissions: Submission[] = await res.json();
-                
+                console.log(tasksList);
+                console.log(submissions );
                 for (const task of tasksList) {
-                    const taskSubmission = submissions.find((s: Submission) => s.task_id === task.task_no);
+                    const taskSubmission = submissions.find((s: Submission) => s.task_no === task.task_no);
                     
                     if (taskSubmission) {
                         const rawStatus = taskSubmission.status;
@@ -590,6 +592,11 @@ const TasksPageContent = () => {
                         </button>
                     </div>
                     <div className="w-[95%] sm:w-[85%] md:w-[80%] mt-7 h-[72vh] overflow-scroll scrollbar-hide px-5 m-auto">
+                        {toggles[1] && ismentor || toggles[2] && !ismentor ? (
+                            <div className="flex justify-center items-center h-full">
+                                <p className="text-center">Not Applicable for Praveshan</p>
+                            </div>
+                        ):(
                         <TasksViewer 
                             isMentor={ismentor}
                             highted_task={CurrentTaskIndex} 
@@ -597,7 +604,7 @@ const TasksPageContent = () => {
                             mentees={getFilteredMentees()}
                             onTaskClick={handleTaskClick}
                             onMenteeClick={handleMenteeClick}
-                        />
+                        />)}
                     </div>
                 </>
             )}

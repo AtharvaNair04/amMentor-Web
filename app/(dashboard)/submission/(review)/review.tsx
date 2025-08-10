@@ -37,7 +37,9 @@ interface SubmissionData {
 interface SubmissionResponse {
   id: number;
   task_id: number;
+  task_no: number;
   reference_link: string;
+  commit_hash:string;
   status: string;
   mentor_feedback: string;
   submitted_at: string;
@@ -214,7 +216,7 @@ const SubmissionReview = ({
           const submissions: SubmissionResponse[] = await res.json();
           
           // FIXED: Use taskId directly since it's already task_no from the main page
-          const taskSubmission = submissions.find((s: SubmissionResponse) => s.task_id === parseInt(taskId));
+          const taskSubmission = submissions.find((s: SubmissionResponse) => s.task_no === parseInt(taskId));
           
           if (taskSubmission) {
             setSubmissionData(taskSubmission);
@@ -229,6 +231,9 @@ const SubmissionReview = ({
               setSubmissionText(taskSubmission.submission_text);
             } else if (taskSubmission.reference_link) {
               setSubmissionText(taskSubmission.reference_link);
+            }
+            else if (taskSubmission.commit_hash) {
+              setSubmissionText(taskSubmission.commit_hash);
             } else {
               setSubmissionText('');
             }

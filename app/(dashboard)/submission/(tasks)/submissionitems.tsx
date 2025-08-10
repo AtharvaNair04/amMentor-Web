@@ -14,7 +14,7 @@ const TasksViewer = ({ isMentor, tasks, highted_task, onTaskClick }: TasksViewer
         const taskId = tasks[index][0]; // This is already task_no as string
         onTaskClick(taskId);
     };
-    
+    highted_task = -1;//For Praveshan
     return (
         <div className="p-2 sm:p-3 pb-4 sm:pb-5">
             <div className="overflow-x-visible flex flex-col scrollbar-hide gap-2 sm:gap-3">
