@@ -285,7 +285,7 @@ const MenteeDashboard = () => {
                     />
                 </div>
                 <div className="flex flex-col lg:flex-row justify-between mt-4 sm:mt-6 md:mt-10 gap-6 lg:gap-0">
-                    <div className="flex flex-col gap-6 md:gap-12 w-full lg:w-[48%]">
+                    <div className="flex flex-col gap-6 md:gap-[77px] w-full lg:w-[48%]">
                         <PlayerStats rank={menteeDetails.position} points={menteeDetails.total_points} />
                         <ReviewedTask isLoading={loading} reviewed_tasks={getReviewedTasks()}  />
                     </div>
