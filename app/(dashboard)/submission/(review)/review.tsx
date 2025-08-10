@@ -68,9 +68,7 @@ const SubmissionReview = ({
 }: SubmissionReviewProps) => {
   const [submissionText, setSubmissionText] = useState('');
   const [mentorNotes, setMentorNotes] = useState('');
-  const [reviewStatus, setReviewStatus] = useState('In Progress');
   const [taskStatus, setTaskStatus] = useState('Not Started');
-  const [submissionData, setSubmissionData] = useState<SubmissionData | null>(null);
   const [loading, setLoading] = useState(false);
   const [localTasks, setLocalTasks] = useState<Task[]>(tasks); // Local state for tasks
 
@@ -219,7 +217,6 @@ const SubmissionReview = ({
           const taskSubmission = submissions.find((s: SubmissionResponse) => s.task_no === parseInt(taskId));
           
           if (taskSubmission) {
-            setSubmissionData(taskSubmission);
             setMentorNotes(taskSubmission.mentor_feedback || '');
             
             // Normalize the status from API
