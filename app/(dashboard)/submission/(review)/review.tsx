@@ -259,7 +259,6 @@ const SubmissionReview = ({
   }, [taskId, trackId, menteeId, isMentor]);
 
   const currentTaskUnlocked = taskId ? isTaskUnlocked(taskId) : true;
-  const isAlreadySubmitted = taskStatus === 'Submitted'; // Remove '|| taskStatus === 'Reviewed''
 
   const submitTask = async () => {
     const email = localStorage.getItem('email');
@@ -371,10 +370,6 @@ const SubmissionReview = ({
             mentorNotes={mentorNotes}
             setMentorNotes={setMentorNotes}
             taskStatus={taskStatus}
-            reviewStatus={reviewStatus}
-            setReviewStatus={setReviewStatus}
-            setTaskStatus={setTaskStatus}
-            submissionId={submissionData?.id}
           />
         </div>
       </div>

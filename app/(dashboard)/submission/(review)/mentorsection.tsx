@@ -5,10 +5,6 @@ interface MentorSectionProps {
   mentorNotes: string;
   setMentorNotes: (notes: string) => void;
   taskStatus: string;
-  reviewStatus: string;
-  setReviewStatus: (status: string) => void;
-  setTaskStatus: (status: string) => void;
-  submissionId?: number;
 }
 
 const MentorSection = ({
@@ -16,9 +12,6 @@ const MentorSection = ({
   mentorNotes,
   setMentorNotes,
   taskStatus,
-  setReviewStatus,
-  setTaskStatus,
-  submissionId,
 }: MentorSectionProps) => {
   const isSubmittedForReview = (status: string): boolean => {
     const submittedStatuses = ['submitted', 'Submitted'];
