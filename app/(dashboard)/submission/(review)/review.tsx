@@ -297,9 +297,16 @@ const SubmissionReview = ({
         body: JSON.stringify(body),
       });
 
-      const data = await res.json();
       if (!res.ok) {
-        alert(`Submission failed: ${data.detail || 'Unknown error'}`);
+        try {
+          const data = await res.json();
+          const errorMessage = typeof data.detail === 'string' 
+            ? data.detail 
+            : (data.message || JSON.stringify(data) || 'Unknown error');
+          alert(`Submission failed: ${errorMessage}`);
+        } catch {
+          alert('Submission failed. Please try again.');
+        }
         return;
       }
 
