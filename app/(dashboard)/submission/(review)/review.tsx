@@ -360,7 +360,6 @@ const SubmissionReview = ({
             taskStatus={taskStatus}
             submissionText={submissionText}
             setSubmissionText={setSubmissionText}
-            isAlreadySubmitted={isAlreadySubmitted}
             trackId={trackId ?? undefined}
             onSubmitTask={submitTask}
             allSubmissions={allSubmissions}

@@ -7,7 +7,6 @@ interface TaskDetailsProps {
   taskStatus: string;
   submissionText: string;
   setSubmissionText: (text: string) => void;
-  isAlreadySubmitted: boolean;
   trackId?: string | number;
   onSubmitTask: () => void;
   // New props for sequential task logic
@@ -49,7 +48,6 @@ const TaskDetails = ({
   taskStatus,
   submissionText,
   setSubmissionText,
-  isAlreadySubmitted,
   trackId,
   onSubmitTask,
   allSubmissions = {},
@@ -105,12 +103,13 @@ const TaskDetails = ({
         const startData: TaskStartData = JSON.parse(storedStartData);
         setStartDate(startData.startDate);
         setHasStarted(true);
-      } catch (error) {
+      } catch {
         // Error parsing stored start data - handle silently
       }
     }else{
       handleStartTask();
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [taskId]);
 
   // Calculate progress based on start date and deadline
@@ -211,7 +210,7 @@ const TaskDetails = ({
       //   headers: { 'Content-Type': 'application/json' },
       //   body: JSON.stringify(startData)
       // });
-    } catch (error) {
+    } catch {
       // Error sending start data to server - handle silently
     }
   };
@@ -278,8 +277,6 @@ const TaskDetails = ({
         body: JSON.stringify(body),
       });
 
-      const data = await res.json();
-      
       if (!res.ok) {
         alert('Submission failed. Please try again.');
         return;
@@ -291,7 +288,7 @@ const TaskDetails = ({
       //Refresh data
       fetchTask();
       setSubmitText("task submitted");
-    } catch (err) {
+    } catch {
       alert('An error occurred while submitting the task.');
       setSubmitText("Submit Task");
     }
@@ -323,7 +320,7 @@ const TaskDetails = ({
         } else {
           setTask(null);
         }
-      } catch (error) {
+      } catch {
         setTask(null);
       } finally {
         setLoading(false);
@@ -332,11 +329,11 @@ const TaskDetails = ({
 
   useEffect(() => {
     fetchTask();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
 }, [trackId, taskId]);
 
   // Use the corrected unlock logic
   const taskUnlocked = taskId ? isCurrentTaskUnlocked(taskId) : true;
-  const canStartTask = !isMentor && taskUnlocked && !hasStarted && (taskStatus === 'Not Started');
   const showLockedMessage = !isMentor && !taskUnlocked && taskStatus === 'Not Started';
   
   // Update canEdit logic to use the corrected unlock status
@@ -523,7 +520,7 @@ const TaskDetails = ({
                       ⚠️ Please enter a valid commit hash (7-40 hexadecimal characters) or GitHub commit URL
                     </p>
                     <p className="text-red-300 text-xs mt-1">
-                      Examples: "4025d7b", "abc123def456789", or "https://github.com/user/repo/commit/4025d7b"
+                      Examples: &quot;4025d7b&quot;, &quot;abc123def456789&quot;, or &quot;https://github.com/user/repo/commit/4025d7b&quot;
                     </p>
                   </div>
                 )}
