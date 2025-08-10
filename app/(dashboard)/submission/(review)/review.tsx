@@ -324,15 +324,7 @@ const SubmissionReview = ({
       });
 
       if (!res.ok) {
-        try {
-          const data = await res.json();
-          const errorMessage = typeof data.detail === 'string' 
-            ? data.detail 
-            : (data.message || JSON.stringify(data) || 'Unknown error');
-          alert(`Submission failed: ${errorMessage}`);
-        } catch {
-          alert('Submission failed. Please try again.');
-        }
+        // Silently handle errors - no popup messages
         return;
       }
 
