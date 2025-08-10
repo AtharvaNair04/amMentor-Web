@@ -48,6 +48,25 @@ interface TaskApiResponse {
   deadline: number | null;
 }
 
+// Extract commit hash from various input formats
+const extractCommitHash = (input: string): string | null => {
+  const trimmedInput = input.trim();
+  
+  // If it's a GitHub URL, extract the hash from the end
+  const githubUrlMatch = trimmedInput.match(/github\.com\/.*\/commit\/([a-f0-9]{7,40})$/i);
+  if (githubUrlMatch) {
+    return githubUrlMatch[1];
+  }
+  
+  // Check if it's a valid commit hash (7-40 characters, hexadecimal)
+  const hashMatch = trimmedInput.match(/^[a-f0-9]{7,40}$/i);
+  if (hashMatch) {
+    return trimmedInput;
+  }
+  
+  return null;
+};
+
 const SubmissionReview = ({
   isMentor,
   taskId,
@@ -273,6 +292,13 @@ const SubmissionReview = ({
       return;
     }
 
+    // Validate and extract commit hash
+    const commitHash = extractCommitHash(submissionText);
+    if (!commitHash) {
+      alert('Please enter a valid commit hash (7-40 characters, hexadecimal) or GitHub commit URL');
+      return;
+    }
+
     // Check if task is unlocked before submitting
     if (!currentTaskUnlocked) {
       alert('You must complete the previous task before submitting this one.');
@@ -281,9 +307,9 @@ const SubmissionReview = ({
 
     const body = {
       track_id: Number(currentTrackId),
-      task_no: Number(taskId)-1,
-      reference_link: submissionText.trim(),
+      task_no: Number(taskId),
       start_date: new Date().toISOString().split('T')[0],
+      commit_hash: commitHash,
       mentee_email: email,
     };
 
