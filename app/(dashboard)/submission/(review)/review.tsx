@@ -24,15 +24,6 @@ interface Task {
   points: number;
 }
 
-interface SubmissionData {
-  id: number;
-  reference_link: string;
-  status: string;
-  mentor_feedback: string;
-  submitted_at: string;
-  approved_at?: string;
-  submission_text?: string;
-}
 
 interface SubmissionResponse {
   id: number;
