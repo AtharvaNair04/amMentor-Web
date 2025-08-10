@@ -21,12 +21,18 @@ export default function LoginPage() {
   useEffect(() => {
     const emailInStorage = localStorage.getItem('email');
     if (isLoggedIn && emailInStorage) {
-      const userRole = localStorage.getItem('userRole');
-      if (userRole === 'Mentor') {
-        router.push('/dashboard');
-      } else {
-        router.push('/track');
+      // Only redirect if we're actually on the login page
+      // If user is already on another page, let them stay there
+      const currentPath = window.location.pathname;
+      if (currentPath === '/login' || currentPath === '/') {
+        const userRole = localStorage.getItem('userRole');
+        if (userRole === 'Mentor') {
+          router.push('/dashboard');
+        } else {
+          router.push('/track');
+        }
       }
+      // If user is on any other page, don't redirect - let them stay
     } else {
       setLoading(false);
     }

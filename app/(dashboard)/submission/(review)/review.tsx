@@ -80,8 +80,8 @@ const SubmissionReview = ({
     
     const statusMap: { [key: string]: string } = {
       'submitted': 'Submitted',
-      'approved': 'Reviewed',
-      'rejected': 'Reviewed',
+      'approved': 'Submitted', // Changed from 'Reviewed' to 'Submitted'
+      'rejected': 'Submitted', // Changed from 'Reviewed' to 'Submitted'
       'paused': 'Paused',
       'in progress': 'In Progress',
       'not started': 'Not Started'
@@ -159,7 +159,7 @@ const SubmissionReview = ({
     
     // Otherwise, check if previous task is completed
     const previousTaskStatus = allSubmissions[previousTaskNo];
-    return previousTaskStatus === 'Submitted' || previousTaskStatus === 'Reviewed';
+    return previousTaskStatus === 'Submitted'; // Remove 'Reviewed' since that's now 'Submitted'
   };
 
   // Fetch submission data when component mounts
@@ -259,7 +259,7 @@ const SubmissionReview = ({
   }, [taskId, trackId, menteeId, isMentor]);
 
   const currentTaskUnlocked = taskId ? isTaskUnlocked(taskId) : true;
-  const isAlreadySubmitted = taskStatus === 'Submitted' || taskStatus === 'Reviewed';
+  const isAlreadySubmitted = taskStatus === 'Submitted'; // Remove '|| taskStatus === 'Reviewed''
 
   const submitTask = async () => {
     const email = localStorage.getItem('email');

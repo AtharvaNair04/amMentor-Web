@@ -31,7 +31,7 @@ const TasksViewer = ({ isMentor, tasks, highted_task, onTaskClick }: TasksViewer
                                 <h1 
                                     className={`text-xs sm:text-sm md:text-lg lg:text-2xl
                                         ${j === 0 ? "text-left pl-14" : j === 1 ? "text-center" : "text-right pr-14"}
-                                        ${item.includes("Reviewed") && "text-green"} 
+                                        ${item.includes("Submitted") && "text-green"} // Changed from "Reviewed" 
                                         ${item.includes("Rejected") && "text-red"} 
                                         ${item.includes("Paused") && "text-blue-500"} 
                                         ${item.includes("Submitted") && "text-primary-yellow"} 

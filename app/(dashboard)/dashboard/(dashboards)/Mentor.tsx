@@ -49,8 +49,8 @@ const normalizeStatus = (status: string): string => {
     
     const statusMap: { [key: string]: string } = {
         'submitted': 'Submitted',
-        'approved': 'Reviewed',
-        'rejected': 'Reviewed',
+        'approved': 'Submitted', // Changed from 'Reviewed' to 'Submitted'
+        'rejected': 'Submitted', // Changed from 'Reviewed' to 'Submitted'
         'paused': 'Paused',
         'in progress': 'In Progress',
         'not started': 'Not Started'
@@ -167,29 +167,59 @@ const MentorDashboard = () => {
         if (!menteeSubmissions) return 0;
         
         return Object.values(menteeSubmissions).filter(status => 
-            status === 'Submitted' || status === 'Reviewed'
+            status === 'Submitted' // Remove '|| status === 'Reviewed'' since that's now 'Submitted'
         ).length;
     }, [menteeSubmissions]);
 
     const getCurrentTaskForMentee = useCallback((): Task | null => {
-        if (!tasks.length || !menteeSubmissions) return null;
+        if (!tasks.length || !menteeSubmissions || !selectedMentee) return null;
         
-        // Find submitted tasks for the selected mentee
-        const submittedTasks = tasks.filter(task => {
-            const status = menteeSubmissions[task.id];
-            return status === 'Submitted';
-        });
+        // Sort tasks by task_no to ensure proper order (lowest first)
+        const sortedTasks = tasks.sort((a, b) => a.task_no - b.task_no);
         
-        // Return the earliest (lowest ID) submitted task
-        return submittedTasks.length > 0 ? submittedTasks[0] : null;
-    }, [tasks, menteeSubmissions]);
+        // Find the FIRST (lowest task_no) "Not Started" task that is unlocked
+        for (const task of sortedTasks) {
+            const status = menteeSubmissions[task.id] || 'Not Started';
+            
+            // Check if previous task is unlocked (for sequential tasks)
+            // For task_no 0, it's always unlocked
+            const isUnlocked = task.task_no <= 0 || (() => {
+                // Find previous task by task_no
+                const prevTask = sortedTasks.find(t => t.task_no === task.task_no - 1);
+                return prevTask ? menteeSubmissions[prevTask.id] === 'Submitted' : false;
+            })();
+            
+            // If task is "Not Started" and unlocked, this is the current task
+            if (status === 'Not Started' && isUnlocked) {
+                return task;
+            }
+        }
+        
+        // If no "Not Started" unlocked tasks found, check for any non-submitted tasks
+        for (const task of sortedTasks) {
+            const status = menteeSubmissions[task.id] || 'Not Started';
+            
+            const isUnlocked = task.task_no <= 0 || (() => {
+                const prevTask = sortedTasks.find(t => t.task_no === task.task_no - 1);
+                return prevTask ? menteeSubmissions[prevTask.id] === 'Submitted' : false;
+            })();
+            
+            // If task is not submitted and unlocked, this could be current
+            if (status !== 'Submitted' && isUnlocked) {
+                return task;
+            }
+        }
+        
+        // If all tasks are submitted, return null (all tasks completed)
+        return null;
+    }, [tasks, menteeSubmissions, selectedMentee]);
 
     const getFormattedTasksForMentee = (): string[][] => {
         if (!menteeSubmissions) return [];
         
         return tasks.map((task) => {
             const status = menteeSubmissions[task.id] || 'Not Started';
-            return [(task.task_no + 1).toString(), task.title, status];
+            return [task.task_no.toString(), task.title, status];
         });
     };
 
@@ -199,15 +229,20 @@ const MentorDashboard = () => {
         const formattedTasks = getFormattedTasksForMentee();
         return formattedTasks.filter(task => {
             const status = task[2];
-            return status === 'Not Started' || status === 'In Progress' || status === 'Paused';
+            // Show tasks that are not submitted yet
+            return status === 'Not Started' || 
+                   status === 'In Progress' || 
+                   status === 'Paused' ||
+                   status.includes('🔒'); // Include locked tasks
         });
     };
     
-    const getReviewedMentorTasks = (): string[][] => {
+    const getSubmittedMentorTasks = (): string[][] => {
         if (!selectedMentee) return [];
         
         const formattedTasks = getFormattedTasksForMentee();
-        return formattedTasks.filter(task => task[2] === 'Reviewed');
+        // Filter for tasks with "Submitted" status (includes approved/rejected)
+        return formattedTasks.filter(task => task[2] === 'Submitted');
     };
 
     // Fetch submissions for only the selected mentee
@@ -474,7 +509,7 @@ const MentorDashboard = () => {
                                 <UpcomingTask isLoading={loading} upcoming_tasks={getUpcomingMentorTasks()} />
                             </div>
                             <div className="w-1/2">
-                                <ReviewedTask isLoading={loading} reviewed_tasks={getReviewedMentorTasks()} />
+                                <ReviewedTask isLoading={loading} reviewed_tasks={getSubmittedMentorTasks()} />
                             </div>
                         </div>
                         <FeedbackProvided 

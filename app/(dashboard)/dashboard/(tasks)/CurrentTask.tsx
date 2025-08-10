@@ -26,14 +26,14 @@ export default function CurrentTask({ mentor = false, task, status , isLoading }
         if (mentor) {
             return status === 'Submitted' ? "Review Work" : "View Task";
         } else {
-            if (status === 'Reviewed') return "View Feedback";
+            if (status === 'Submitted') return "View Submission"; // Changed from 'Reviewed' to 'Submitted'
             if (status === 'Submitted') return "View Submission";
             return "Start Task"; 
         }
     };
 
     const getButtonColor = (): string => {
-        if (status === 'Reviewed') return "bg-green-600";
+        if (status === 'Submitted') return "bg-green-600"; // Changed from 'Reviewed' to 'Submitted'
         if (status === 'Submitted') return "bg-blue-600";
         return "bg-dark-grey";
     };

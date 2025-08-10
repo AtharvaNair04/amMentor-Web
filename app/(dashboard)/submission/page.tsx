@@ -29,8 +29,8 @@ const normalizeStatus = (status: string): string => {
     
     const statusMap: { [key: string]: string } = {
         'submitted': 'Submitted',
-        'approved': 'Reviewed',
-        'rejected': 'Rejected',
+                'approved': 'Submitted', // Changed from 'Reviewed' to 'Submitted'
+        'rejected': 'Submitted', // Changed from 'Reviewed' to 'Submitted'
         'paused': 'Paused',
         'in progress': 'In Progress',
         'not started': 'Not Started'
@@ -87,7 +87,7 @@ const TasksPageContent = () => {
         }
         
         const previousTaskStatus = mySubmissions[previousTaskId];
-        const isUnlocked = previousTaskStatus === 'Submitted' || previousTaskStatus === 'Reviewed';
+        const isUnlocked = previousTaskStatus === 'Submitted'; // Remove 'Reviewed' since that's now 'Submitted'
         
         return isUnlocked;
     }, [ismentor, mySubmissions, tasks]);
@@ -99,14 +99,35 @@ const TasksPageContent = () => {
             trackId = 1;
         } else {
             if (typeof window !== 'undefined') {
-                const sessionTrack = sessionStorage.getItem('currentTrack');
+                // Check both sessionStorage and localStorage for track data
+                let sessionTrack = sessionStorage.getItem('currentTrack');
                 if (!sessionTrack) {
-                    router.push('/track');
-                    return [];
+                    // Fallback to localStorage if sessionStorage is empty
+                    sessionTrack = localStorage.getItem('currentTrack');
                 }
-                const trackData = JSON.parse(sessionTrack);
-                trackId = trackData.id;
-                setCurrentTrack(trackData);
+                
+                if (!sessionTrack) {
+                    // Only redirect if we're specifically on the submission page and no track is selected
+                    // Don't redirect if user is navigating directly to a specific task
+                    const urlParams = new URLSearchParams(window.location.search);
+                    const pageParam = urlParams.get('page');
+                    
+                    if (!pageParam) {
+                        router.push('/track');
+                        return [];
+                    } else {
+                        // User has a specific task in URL, use default track for now
+                        // You might want to fetch user's enrolled track from API here
+                        trackId = 1; // Default track ID
+                        setCurrentTrack({ id: 1, name: 'Default Track' });
+                    }
+                } else {
+                    const trackData = JSON.parse(sessionTrack);
+                    trackId = trackData.id;
+                    setCurrentTrack(trackData);
+                    // Store in localStorage as backup for future sessions
+                    localStorage.setItem('currentTrack', sessionTrack);
+                }
             }
         }
 
@@ -139,7 +160,7 @@ const TasksPageContent = () => {
                 const submissions: Submission[] = await res.json();
                 
                 for (const task of tasksList) {
-                    const taskSubmission = submissions.find((s: Submission) => s.task_id === task.task_no);
+                    const taskSubmission = submissions.find((s: Submission) => s.task_no === task.task_no);
                     const rawStatus = taskSubmission?.status || 'Not Started';
                     const normalizedStatus = normalizeStatus(rawStatus);
                     results[selectedMentee][task.task_no] = normalizedStatus;
@@ -257,7 +278,7 @@ const TasksPageContent = () => {
                 displayStatus = `${status} (${task.deadline} days)`;
             }
             
-            // Use task.task_no for both display and internal logic
+            // Use raw task_no as shown in API
             return [task.task_no.toString(), task.title, displayStatus];
         } else {
             return [task.task_no.toString(), task.title, ""];

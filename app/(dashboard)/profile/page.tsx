@@ -80,7 +80,7 @@ const ProfilePage = () => {
             <h1 className="text-2xl font-bold">{user.name}</h1>
             <p className="text-sm text-gray-300">{user.email}</p>
             <p className="text-sm text-gray-400">
-              {isMentor ? 'Mentor' : 'Mentee'} @ amFOSS
+              {isMentor ? 'Padawan' : 'Mentee'} @ amFOSS
             </p>
 
             {/* Placeholder socials */}
@@ -103,7 +103,7 @@ const ProfilePage = () => {
 
         <div className="w-full space-y-4">
           <div className="flex justify-between items-center">
-            <h2 className="text-lg font-semibold tracking-wide">BADGES EARNED</h2>
+            <h2 className="text-lg font-semibold tracking-wide">BADGES EARNED (Not applicable for Praveshan)</h2>
             <Link href="#" className="text-yellow-400 text-sm flex items-center gap-1 hover:underline">
               See all <FaArrowRight size={12} />
             </Link>

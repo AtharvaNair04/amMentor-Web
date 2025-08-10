@@ -35,6 +35,10 @@ const MentorSection = ({
     return waitingStatuses.includes(status);
   };
 
+  const showNotForPraveshanDialog = () => {
+    alert('This feature is not available for Praveshan.');
+  };
+
   const handleReviewAction = async (action: string) => {
     if (!submissionId) {
       alert('No submission found to review');
@@ -137,39 +141,19 @@ const MentorSection = ({
           </>
         ) : (
           <div className="bg-dark-grey rounded-md p-3 md:p-4 min-h-[100px] md:min-h-[120px] text-sm md:text-base text-white-text mb-4 md:mb-6">
-            {mentorNotes || 'No mentor notes provided yet.'}
+            {mentorNotes || 'Not applicable for Praveshan.'}
           </div>
         )}
       </div>
 
       {/* ✅ Resources Section */}
       <div className="mt-6 md:mt-10">
-        <div className="flex justify-between items-center mb-4 md:mb-6">
-          <h2 className="font-bold text-white-text">Resources:</h2>
-          <button className="bg-dark-bg rounded-full w-6 h-6 md:w-8 md:h-8 flex items-center justify-center">
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 md:h-5 md:w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-            </svg>
-          </button>
-        </div>
-
-        <div className="bg-dark-grey rounded-md p-2 md:p-3 flex items-center mb-8">
-          <div className="mr-3 md:mr-4">
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 md:h-8 md:w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-            </svg>
-          </div>
-          <div>
-            <p className="font-semibold text-sm md:text-base text-white-text">Task Guidelines.pdf</p>
-            <p className="text-xs text-gray-400">Download</p>
-          </div>
-        </div>
 
         {/* Review Action Buttons */}
         {isMentor && isSubmittedForReview(taskStatus) && (
           <div className="flex justify-between gap-2">
             <button 
-              onClick={() => handleReviewAction('rejected')}
+              onClick={showNotForPraveshanDialog}
               className="flex-1 bg-red hover:bg-red-700 text-white py-2 px-4 rounded-md font-medium flex items-center justify-center"
             >
               <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -178,7 +162,7 @@ const MentorSection = ({
               Reject
             </button>
             <button 
-              onClick={() => handleReviewAction('approved')}
+              onClick={showNotForPraveshanDialog}
               className="flex-1 bg-dark-green hover:bg-green-700 text-white py-2 px-4 rounded-md font-medium flex items-center justify-center"
             >
               <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -187,7 +171,7 @@ const MentorSection = ({
               Approve
             </button>
             <button 
-              onClick={() => handleReviewAction('paused')}
+              onClick={showNotForPraveshanDialog}
               className="flex-1 bg-orange-500 hover:bg-orange-600 text-white py-2 px-4 rounded-md font-medium"
             >
               Pause
@@ -199,7 +183,7 @@ const MentorSection = ({
           taskStatus.toLowerCase() === 'paused' ? (
             <div className="flex justify-center mt-4">
               <button 
-                onClick={() => handleReviewAction('unpaused')}
+                onClick={showNotForPraveshanDialog}
                 className="bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-md font-medium"
               >
                 Unpause

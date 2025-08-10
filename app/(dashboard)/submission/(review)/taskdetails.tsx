@@ -68,6 +68,30 @@ const TaskDetails = ({
     return `task_start_${taskId}_${email}`;
   };
 
+  // Extract commit hash from URL or validate hash format
+  const extractCommitHash = (input: string): string | null => {
+    const trimmedInput = input.trim();
+    
+    // If it's a GitHub URL, extract the hash from the end
+    const githubUrlMatch = trimmedInput.match(/github\.com\/.*\/commit\/([a-f0-9]{7,40})$/i);
+    if (githubUrlMatch) {
+      return githubUrlMatch[1];
+    }
+    
+    // Check if it's a valid commit hash (7-40 characters, hexadecimal)
+    const hashMatch = trimmedInput.match(/^[a-f0-9]{7,40}$/i);
+    if (hashMatch) {
+      return trimmedInput;
+    }
+    
+    return null;
+  };
+
+  // Validate commit hash format
+  const isValidCommitHash = (input: string): boolean => {
+    return extractCommitHash(input) !== null;
+  };
+
   // Load start date from localStorage on component mount
   useEffect(() => {
     const email = localStorage.getItem('email');
@@ -82,7 +106,7 @@ const TaskDetails = ({
         setStartDate(startData.startDate);
         setHasStarted(true);
       } catch (error) {
-        console.error('Error parsing stored start data:', error);
+        // Error parsing stored start data - handle silently
       }
     }else{
       handleStartTask();
@@ -136,7 +160,7 @@ const TaskDetails = ({
     
     // Otherwise, check if previous task is completed
     const previousTaskStatus = allSubmissions[previousTaskNo];
-    const isUnlocked = previousTaskStatus === 'Submitted' || previousTaskStatus === 'Reviewed';
+    const isUnlocked = previousTaskStatus === 'Submitted'; // Remove 'Reviewed' since that's now 'Submitted'
     
     return isUnlocked;
   };
@@ -188,8 +212,7 @@ const TaskDetails = ({
       //   body: JSON.stringify(startData)
       // });
     } catch (error) {
-      console.error('Error sending start data to server:', error);
-      // Don't show error to user as localStorage storage is more important
+      // Error sending start data to server - handle silently
     }
   };
 
@@ -222,6 +245,13 @@ const TaskDetails = ({
       return;
     }
 
+    // Validate and extract commit hash
+    const commitHash = extractCommitHash(submissionText);
+    if (!commitHash) {
+      alert('Please enter a valid commit hash (7-40 characters, hexadecimal) or GitHub commit URL');
+      return;
+    }
+
     // Use stored start date or current date if not started yet
     let submissionStartDate = startDate;
     if (!submissionStartDate) {
@@ -234,7 +264,7 @@ const TaskDetails = ({
       track_id: Number(currentTrackId),
       task_no: Number(taskId),
       start_date: submissionStartDate, // Use the stored start date
-      commit_hash: submissionText.trim(),
+      commit_hash: commitHash, // Use extracted/validated hash only
       mentee_email: email,
     };
 
@@ -249,8 +279,9 @@ const TaskDetails = ({
       });
 
       const data = await res.json();
+      
       if (!res.ok) {
-        alert(`Submission failed: ${data.detail || 'Unknown error'}`);
+        alert('Submission failed. Please try again.');
         return;
       }
 
@@ -261,7 +292,6 @@ const TaskDetails = ({
       fetchTask();
       setSubmitText("task submitted");
     } catch (err) {
-      console.error('Submission error:', err);
       alert('An error occurred while submitting the task.');
       setSubmitText("Submit Task");
     }
@@ -280,7 +310,6 @@ const TaskDetails = ({
         
         // Compare with task_no directly since taskId is now task_no
         const foundTask = tasks.find((t: TaskApiResponse) => t.task_no === parseInt(taskId));
-        console.log(foundTask);
         if (foundTask) {
           setTask({
             id: foundTask.id,
@@ -295,7 +324,6 @@ const TaskDetails = ({
           setTask(null);
         }
       } catch (error) {
-        console.error('Error fetching task:', error);
         setTask(null);
       } finally {
         setLoading(false);
@@ -362,7 +390,7 @@ const TaskDetails = ({
           {/* Task Status and Lock Message */}
           <div className="mt-3">
             <span className={`inline-block px-3 py-1 rounded-full text-xs font-semibold ${
-              taskStatus === 'Reviewed' ? 'bg-green-600 text-white' :
+              taskStatus === 'Submitted' ? 'bg-green-600 text-white' : // Changed from 'Reviewed'
               taskStatus === 'Submitted' ? 'bg-primary-yellow text-black' :
               taskStatus === 'In Progress' ? 'bg-blue-600 text-white' :
               showLockedMessage ? 'bg-red-600 text-white' :
@@ -461,22 +489,6 @@ const TaskDetails = ({
           </>
         )}
 
-        {isMentor && (
-          <div className="mb-6">
-            <div className="flex flex-col gap-2">
-              <div className="flex">
-                <span className="text-primary-yellow font-semibold">Starting Date: </span>
-                <span className="ml-2">{startDate ? new Date(startDate).toLocaleDateString() : 'Not started'}</span>
-              </div>
-              {isAlreadySubmitted && (
-                <div className="flex">
-                  <span className="text-primary-yellow font-semibold">Submitted Date: </span>
-                  <span className="ml-2">04/05/2025</span>
-                </div>
-              )}
-            </div>
-          </div>
-        )}
       </div>
       
       <div className="mb-8 mt-8 md:mb-10">
@@ -500,23 +512,44 @@ const TaskDetails = ({
                   value={submissionText}
                   readOnly={submitText != "Submit Task"}
                   onChange={(e) => setSubmissionText(e.target.value)}
-                  placeholder="Submit your commit hash here."
+                  placeholder="Enter commit hash (e.g., 4025d7b or abc123def456) or GitHub commit URL"
                   className="w-full bg-dark-grey rounded-md p-3 md:p-4 min-h-[100px] md:min-h-[120px] text-sm md:text-base text-white-text mb-4 md:mb-6 resize-none border-none outline-none placeholder-gray-500"
                 />
+                
+                {/* Validation message */}
+                {submissionText.trim() && !isValidCommitHash(submissionText) && (
+                  <div className="mb-4 p-3 bg-red-900 bg-opacity-50 border border-red-600 rounded-md">
+                    <p className="text-red-300 text-sm">
+                      ⚠️ Please enter a valid commit hash (7-40 hexadecimal characters) or GitHub commit URL
+                    </p>
+                    <p className="text-red-300 text-xs mt-1">
+                      Examples: "4025d7b", "abc123def456789", or "https://github.com/user/repo/commit/4025d7b"
+                    </p>
+                  </div>
+                )}
+                
+                {/* Success message for valid hash */}
+                {submissionText.trim() && isValidCommitHash(submissionText) && (
+                  <div className="mb-4 p-3 bg-green-900 bg-opacity-50 border border-green-600 rounded-md">
+                    <p className="text-green-300 text-sm">
+                      ✅ Valid commit hash: {extractCommitHash(submissionText)}
+                    </p>
+                  </div>
+                )}
                 
                 <div className="flex justify-center">
                   {submitText != "task submitted" ? (
                   <button 
                     type="submit"
-                    disabled={!submissionText.trim() || submitText != "Submit Task"}
+                    disabled={!submissionText.trim() || !isValidCommitHash(submissionText) || submitText != "Submit Task"}
                     onClick={(e) => {
                       e.preventDefault();
-                      if (submissionText.trim()) {
+                      if (submissionText.trim() && isValidCommitHash(submissionText)) {
                         handleSubmitTask();
                       }
                     }}
                     className={`px-6 md:px-10 py-2 rounded-full text-sm md:text-md font-bold shadow-md ${
-                      !submissionText.trim()  || submitText != "Submit Task"
+                      !submissionText.trim() || !isValidCommitHash(submissionText) || submitText != "Submit Task"
                         ? "bg-gray-600 text-gray-400 cursor-not-allowed"
                         : "bg-primary-yellow hover:bg-[#b18820] text-dark-bg hover:shadow-xl transition-shadow"
                     }`}
@@ -559,7 +592,15 @@ const TaskDetails = ({
                 {taskStatus === 'Reviewed' && (
                   <div className="text-center">
                     <p className="text-green-400 font-semibold">
-                      🎉 Task completed and reviewed!
+                      Task Progress: {progressPercentage}%
+                    </p>
+                  </div>
+                )}
+
+                {taskStatus === 'Submitted' && ( // Changed from 'Reviewed'
+                  <div className="mt-4 p-4 bg-green-900 bg-opacity-50 border border-green-600 rounded-lg">
+                    <p className="text-green-300">
+                      🎉 Task completed and submitted! {/* Changed from 'reviewed' */}
                     </p>
                   </div>
                 )}
