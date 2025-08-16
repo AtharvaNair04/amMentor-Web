@@ -115,11 +115,15 @@ const TaskDetails = ({
     if (isMentor) return true; // Mentors can access any task
     
     const currentId = parseInt(currentTaskId);
-    if (currentId <= 1) return true; // First task is always unlocked
+    // Find the current task to get its task_no
+    const currentTask = tasks.find(task => task.id === currentId);
+    if (!currentTask) return false;
     
-    // Find the previous task
-    const previousTaskId = currentId - 1;
-    const previousTask = tasks.find(task => task.id === previousTaskId);
+    if (currentTask.task_no <= 0) return true; // First task is always unlocked
+    
+    // Find the previous task by task_no
+    const previousTaskNo = currentTask.task_no - 1;
+    const previousTask = tasks.find(task => task.task_no === previousTaskNo);
     
     // If previous task doesn't exist, don't unlock
     if (!previousTask) {
@@ -131,24 +135,26 @@ const TaskDetails = ({
       return true;
     }
     
-    // Otherwise, check if previous task is completed
-    const previousTaskStatus = allSubmissions[previousTaskId];
-    const isUnlocked = previousTaskStatus === 'Submitted' || previousTaskStatus === 'Reviewed';
-    
-    return isUnlocked;
+    // Otherwise, check if previous task is completed using task_no
+    const previousTaskStatus = allSubmissions[previousTaskNo];
+    return previousTaskStatus === 'Submitted' || previousTaskStatus === 'Reviewed';
   };
 
   const getBlockedTaskMessage = (currentTaskId: string): string => {
     const currentId = parseInt(currentTaskId);
-    const previousTaskId = currentId - 1;
-    const previousTask = tasks.find(task => task.id === previousTaskId);
+    // Find the current task to get its task_no
+    const currentTask = tasks.find(task => task.id === currentId);
+    if (!currentTask) return 'Previous task must be completed first.';
+    
+    const previousTaskNo = currentTask.task_no - 1;
+    const previousTask = tasks.find(task => task.task_no === previousTaskNo);
     
     if (previousTask && previousTask.deadline === null) {
-      return `Task ${previousTaskId} ("${previousTask.title}") has no deadline and should automatically unlock this task. If you're seeing this error, please refresh the page or contact support.`;
+      return `Task ${previousTaskNo + 1} ("${previousTask.title}") has no deadline and should automatically unlock this task. If you're seeing this error, please refresh the page or contact support.`;
     }
     
-    const previousTaskTitle = previousTask ? `"${previousTask.title}"` : previousTaskId.toString();
-    return `You must submit Task ${previousTaskId} (${previousTaskTitle}) before you can start this task.`;
+    const previousTaskTitle = previousTask ? `"${previousTask.title}"` : (previousTaskNo + 1).toString();
+    return `You must submit Task ${previousTaskNo + 1} (${previousTaskTitle}) before you can start this task.`;
   };
 
   // Handle start task button click
@@ -226,7 +232,7 @@ const TaskDetails = ({
 
     const body = {
       track_id: Number(currentTrackId),
-      task_no: Number(taskId) - 1,
+      task_no: task ? task.task_no : 0,
       reference_link: submissionText.trim(),
       start_date: submissionStartDate, // Use the stored start date
       mentee_email: email,
@@ -329,7 +335,7 @@ const TaskDetails = ({
           <h2 className="text-xl md:text-2xl font-bold text-white-text">
             {task?.title || 'TASK NAME'}
           </h2>
-          <p className="text-gray-400">TASK - {taskId || 'XX'}</p>
+          <p className="text-gray-400">TASK - {task ? (task.task_no + 1) : 'XX'}</p>
           {task?.deadline === null && (
             <p className="text-green-400 text-sm">📅 No deadline - Next task automatically unlocked</p>
           )}

@@ -91,28 +91,43 @@ const TasksPageContent = () => {
         return isUnlocked;
     }, [ismentor, mySubmissions, tasks]);
 
-    const fetchTasks = useCallback(async (): Promise<Task[]> => {
-        let trackId;
+    const fetchTasks = useCallback(async (trackId?: number): Promise<Task[]> => {
+        let finalTrackId = trackId;
 
-        if (userRole === 'Mentor') {
-            trackId = 1;
-        } else {
-            if (typeof window !== 'undefined') {
-                const sessionTrack = sessionStorage.getItem('currentTrack');
-                if (!sessionTrack) {
-                    router.push('/track');
+        if (!finalTrackId) {
+            if (userRole === 'Mentor') {
+                // Get mentor's selected track from session storage
+                if (typeof window !== 'undefined') {
+                    const mentorTrack = sessionStorage.getItem('mentorCurrentTrack');
+                    if (mentorTrack) {
+                        const trackData = JSON.parse(mentorTrack);
+                        finalTrackId = trackData.id;
+                    } else {
+                        // Fallback to track 1 if no track is selected
+                        finalTrackId = 1;
+                    }
+                } else {
+                    finalTrackId = 1;
+                }
+            } else {
+                if (typeof window !== 'undefined') {
+                    const sessionTrack = sessionStorage.getItem('currentTrack');
+                    if (!sessionTrack) {
+                        router.push('/track');
+                        return [];
+                    }
+                    const trackData = JSON.parse(sessionTrack);
+                    finalTrackId = trackData.id;
+                } else {
                     return [];
                 }
-                const trackData = JSON.parse(sessionTrack);
-                trackId = trackData.id;
-                setCurrentTrack(trackData);
             }
         }
 
-        if (!trackId) return [];
+        if (!finalTrackId) return [];
 
         try {
-            const response = await fetch(`https://amapi.amfoss.in/tracks/${trackId}/tasks`);
+            const response = await fetch(`https://amapi.amfoss.in/tracks/${finalTrackId}/tasks`);
             if (!response.ok) throw new Error('Failed to fetch tasks');
             const data = await response.json();
             setTasks(data);
@@ -138,7 +153,7 @@ const TasksPageContent = () => {
                 const submissions: Submission[] = await res.json();
                 
                 for (const task of tasksList) {
-                    const taskSubmission = submissions.find((s: Submission) => s.task_id === task.task_no);
+                    const taskSubmission = submissions.find((s: Submission) => s.task_id === task.id);
                     const rawStatus = taskSubmission?.status || 'Not Started';
                     const normalizedStatus = normalizeStatus(rawStatus);
                     results[selectedMentee][task.task_no] = normalizedStatus;
@@ -174,7 +189,7 @@ const TasksPageContent = () => {
                 const submissions: Submission[] = await res.json();
                 
                 for (const task of tasksList) {
-                    const taskSubmission = submissions.find((s: Submission) => s.task_id === task.task_no);
+                    const taskSubmission = submissions.find((s: Submission) => s.task_id === task.id);
                     
                     if (taskSubmission) {
                         const rawStatus = taskSubmission.status;
@@ -241,7 +256,7 @@ const TasksPageContent = () => {
         return filteredTasks.map((task) => {
             if (ismentor && selectedMentee && menteeSubmissions[selectedMentee]) {
                 const status = menteeSubmissions[selectedMentee][task.task_no] || 'Not Started';
-                return [(task.task_no + 1).toString(), task.title, status];
+                return [(task.task_no + 1).toString(), task.title, status, task.id.toString()];
             } else if (!ismentor && Object.keys(mySubmissions).length > 0) {
                 const status = mySubmissions[task.task_no] || 'Not Started';
                 const unlocked = isTaskUnlocked(task.task_no);
@@ -255,9 +270,9 @@ const TasksPageContent = () => {
                     displayStatus = `${status} (${task.deadline} days)`;
                 }
                 
-                return [(task.task_no + 1).toString(), task.title, displayStatus];
+                return [(task.task_no + 1).toString(), task.title, displayStatus, task.id.toString()];
             } else {
-                return [(task.task_no + 1).toString(), task.title, ""];
+                return [(task.task_no + 1).toString(), task.title, "", task.id.toString()];
             }
         });
     }, [getFilteredTasks, ismentor, selectedMentee, menteeSubmissions, mySubmissions, isTaskUnlocked]);
@@ -271,13 +286,7 @@ const TasksPageContent = () => {
 
         const init = async () => {
             try {
-                const fetchedTasks = await fetchTasks();
-                if (fetchedTasks.length === 0) {
-                    setLoading(false);
-                    return;
-                }
-
-                // Get track ID once
+                // Set current track first
                 let trackId;
                 if (userRole === 'Mentor') {
                     // Get mentor's selected track from session storage
@@ -302,9 +311,16 @@ const TasksPageContent = () => {
                     }
                 }
 
+                // Fetch tasks for the specific track
+                const fetchedTasks = await fetchTasks(trackId);
+                if (fetchedTasks.length === 0) {
+                    setLoading(false);
+                    return;
+                }
+
                 if (ismentor) {
                     // Wait for mentees to load, then fetch submissions for selected mentee
-                    if (!menteesLoading && selectedMentee && selectedMenteeEmail) {
+                    if (!menteesLoading && selectedMentee && selectedMenteeEmail && trackId) {
                         await fetchSelectedMenteeSubmissions(trackId, fetchedTasks);
                     }
                 } else {
@@ -321,7 +337,7 @@ const TasksPageContent = () => {
         };
 
         init();
-    }, [isLoggedIn, router, ismentor, fetchTasks, fetchSelectedMenteeSubmissions, fetchMySubmissions, menteesLoading, selectedMentee, selectedMenteeEmail, userRole]);
+    }, [isLoggedIn, router, userRole, ismentor, fetchTasks, fetchSelectedMenteeSubmissions, fetchMySubmissions, menteesLoading, selectedMentee, selectedMenteeEmail]);
 
     // Separate effect to handle mentee selection changes
     useEffect(() => {
@@ -346,9 +362,12 @@ const TasksPageContent = () => {
     const getFilteredMentees = useCallback((): string[][][] => {
         if (!ismentor || tasks.length === 0 || !selectedMentee) return [];
 
-        return toggledTasks.map(([taskIdStr]) => {
+        return toggledTasks.map(([taskNoStr, , , taskIdStr]) => {
             const taskId = parseInt(taskIdStr);
-            const status = menteeSubmissions[selectedMentee]?.[taskId] || 'Not Started';
+            // Find the task to get its task_no
+            const task = tasks.find(t => t.id === taskId);
+            const taskNo = task ? task.task_no : parseInt(taskNoStr) - 1;
+            const status = menteeSubmissions[selectedMentee]?.[taskNo] || 'Not Started';
             return [[selectedMentee, selectedMenteeEmail || '', "-", status]];
         });
     }, [ismentor, selectedMentee, selectedMenteeEmail, toggledTasks, menteeSubmissions, tasks]);
@@ -368,20 +387,27 @@ const TasksPageContent = () => {
             setShowReview(true);
         } else {
             const taskIdNum = parseInt(taskId);
-            if (!isTaskUnlocked(taskIdNum - 1)) {
-                const previousTaskId = taskIdNum - 2;
-                const previousTask = tasks.find(task => task.task_no === previousTaskId);
+            // Find the task to get its task_no for unlock checking
+            const task = tasks.find(t => t.id === taskIdNum);
+            if (!task) {
+                alert('Task not found');
+                return;
+            }
+            
+            if (!isTaskUnlocked(task.task_no)) {
+                const previousTaskNo = task.task_no - 1;
+                const previousTask = tasks.find(task => task.task_no === previousTaskNo);
                 
                 if (previousTask && previousTask.deadline === null) {
-                    alert(`Task ${previousTaskId + 1} ("${previousTask.title}") has no deadline and should automatically unlock this task. If you're seeing this error, please refresh the page or contact support.`);
+                    alert(`Task ${previousTaskNo + 1} ("${previousTask.title}") has no deadline and should automatically unlock this task. If you're seeing this error, please refresh the page or contact support.`);
                 } else {
-                    const previousTaskTitle = previousTask ? `"${previousTask.title}"` : (previousTaskId + 1).toString();
-                    alert(`You must complete Task ${previousTaskId + 1} (${previousTaskTitle}) before accessing this task.`);
+                    const previousTaskTitle = previousTask ? `"${previousTask.title}"` : (previousTaskNo + 1).toString();
+                    alert(`You must complete Task ${previousTaskNo + 1} (${previousTaskTitle}) before accessing this task.`);
                 }
                 return;
             }
             
-            setSelectedTaskId((taskIdNum - 1).toString());
+            setSelectedTaskId(taskId);
             setShowReview(true);
         }
     };
@@ -392,8 +418,15 @@ const TasksPageContent = () => {
         setShowReview(true);
     };
 
-    const handleCloseReview = () => {
+    const handleCloseReview = async () => {
         setShowReview(false);
+        
+        // Refresh submissions data after closing review
+        if (ismentor && selectedMentee && selectedMenteeEmail && currentTrack) {
+            await fetchSelectedMenteeSubmissions(currentTrack.id, tasks);
+        } else if (!ismentor && currentTrack) {
+            await fetchMySubmissions(currentTrack.id, tasks);
+        }
     };
 
     const handleChangeTrack = () => {
@@ -420,7 +453,18 @@ const TasksPageContent = () => {
 
                 let trackId;
                 if (userRole === 'Mentor') {
-                    trackId = 1;
+                    // Get mentor's selected track from session storage
+                    if (typeof window !== 'undefined') {
+                        const mentorTrack = sessionStorage.getItem('mentorCurrentTrack');
+                        if (mentorTrack) {
+                            const trackData = JSON.parse(mentorTrack);
+                            trackId = trackData.id;
+                        } else {
+                            trackId = 1; // Fallback to track 1
+                        }
+                    } else {
+                        trackId = 1;
+                    }
                 } else {
                     if (typeof window !== 'undefined') {
                         const sessionTrack = sessionStorage.getItem('currentTrack');
@@ -462,14 +506,6 @@ const TasksPageContent = () => {
 
         init();
     }, [isLoggedIn, router, ismentor, fetchTasks, fetchSelectedMenteeSubmissions, fetchMySubmissions, menteesLoading, selectedMentee, selectedMenteeEmail, userRole]);
-
-    // Handle mentee selection changes
-    useEffect(() => {
-        if (ismentor && !menteesLoading && selectedMentee && selectedMenteeEmail && tasks.length > 0) {
-            const trackId = 1;
-            fetchSelectedMenteeSubmissions(trackId, tasks);
-        }
-    }, [selectedMentee, selectedMenteeEmail, menteesLoading, ismentor, tasks, fetchSelectedMenteeSubmissions]);
 
     // Update formatted tasks
     useEffect(() => {
@@ -558,11 +594,16 @@ const TasksPageContent = () => {
                             <div className="text-yellow-400 text-lg">
                                 Viewing submissions for: {selectedMentee}
                             </div>
+                            {currentTrack && (
+                                <div className="text-gray-400 text-sm">
+                                    Track: {currentTrack.name}
+                                </div>
+                            )}
                             <button 
                                 onClick={() => router.push('/dashboard')}
                                 className="text-sm text-gray-400 hover:text-yellow-400 underline"
                             >
-                                Change Mentee
+                                Change Mentee/Track
                             </button>
                         </div>
                     )}

@@ -46,8 +46,8 @@ export default function CurrentTask({ mentor = false, task, status , isLoading }
 
     const handleTaskClick = () => {
         if (task) {
-            const taskNumber = task.task_no; 
-            router.push(`/submission?page=${taskNumber}`);
+            const taskId = task.id; 
+            router.push(`/submission?page=${taskId}`);
         }
     };
 
