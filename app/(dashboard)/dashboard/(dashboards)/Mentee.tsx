@@ -85,15 +85,15 @@ const MenteeDashboard = () => {
     }, [tasks, mySubmissions]);
 
     const getCurrentTask = useCallback((): Task | null => {
-        // Find the latest unlocked task that is not reviewed
+        // Find the first unlocked task that hasn't been submitted yet
         const unlockedTasks = tasks.filter(task => isTaskUnlocked(task.task_no));
-        const currentTasks = unlockedTasks.filter(task => {
+        const pendingTasks = unlockedTasks.filter(task => {
             const status = mySubmissions[task.task_no] || 'Not Started';
-            return status !== 'Reviewed';
+            return status !== 'Submitted' && status !== 'Reviewed';
         });
         
-        // Return the latest (highest task_no) current task
-        return currentTasks.length > 0 ? currentTasks[currentTasks.length - 1] : null;
+        // Return the first (lowest task_no) pending task
+        return pendingTasks.length > 0 ? pendingTasks[0] : null;
     }, [tasks, mySubmissions, isTaskUnlocked]);
 
     const getFormattedTasks = (): string[][] => {
@@ -114,8 +114,8 @@ const MenteeDashboard = () => {
         const formattedTasks = getFormattedTasks();
         return formattedTasks.filter(task => {
             const status = task[2];
-            // Show locked tasks and not started unlocked tasks
-            return status.includes('🔒') || status === 'Not Started';
+            // Show only locked tasks and not started/in progress unlocked tasks (exclude submitted and reviewed)
+            return status.includes('🔒') || (status === 'Not Started' || status === 'In Progress' || status === 'Paused');
         });
     };
     
@@ -139,7 +139,7 @@ const MenteeDashboard = () => {
                 allSubmissions = submissions;
                 
                 for (const task of tasksList) {
-                    const taskSubmission = submissions.find((s: SubmissionData) => s.task_id === task.task_no);
+                    const taskSubmission = submissions.find((s: SubmissionData) => s.task_id === task.id);
                     
                     if (taskSubmission) {
                         const rawStatus = taskSubmission.status;

@@ -287,7 +287,7 @@ const SubmissionReview = ({
 
     const body = {
       track_id: Number(currentTrackId),
-      task_no: Number(taskId)-1,
+      task_no: localTasks.find(t => t.id === Number(taskId))?.task_no ?? 0,
       reference_link: submissionText.trim(),
       start_date: new Date().toISOString().split('T')[0],
       mentee_email: email,
